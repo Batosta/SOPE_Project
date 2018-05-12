@@ -4,22 +4,46 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-  printf("** Running process %d (PGID %d) **\n", getpid(), getpgrp());
 
-    if (argc!=4){
-	printf("Usage: client <time_out> <num_wanted_seats> <pref_seat_list>\n");
+   printf("** Running process %d (PGID %d) **\n", getpid(), getpgrp());
+   
+   if (argc!=4){
+   	printf("Usage: client <time_out> <num_wanted_seats> <pref_seat_list>\n");
+   	return -1;
+   }
+   if(argv[1] < 0){
+	printf("time_out must be a value above 0\n");
 	return -1;
    }
+   if(argv[2] < 0){
+	printf("num_wanted_seats must be a value above 0\n");
+	return -1;
+   }
+
+   createOpenAnswerFIFO(getpid());
+   
+   return 0;
+}
+
+int createOpenAnswerFIFO(pid_t pid){
+
    char str[3]="ans";
    char *end=str;
+   end+=sprintf(end+3,"%ld",(long)pid);
+   
+   if(mkfifo(str, 0660) == -1){
+
+	printf("Error when creating an answer FIFO\n");
+	exit(1);
+   }
+   
    int fd;
-   end+=sprintf(end+3,"%ld",(long)getpid());
-   mkfifo(str,0660);
+   
+   if((fd = open(str, O_WRONLY) < 0){
 
-   mkfifo("requests",0660);
-   fd=open("requests",O_WRONLY);
-   write(fd,
-  
-
-  return 0;
+	printf("Error when opening an answer FIFO\n");
+	exit(1);
+   }
+   
+   return fd;
 }
