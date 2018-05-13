@@ -8,8 +8,17 @@ void *ticket_office_thr_func(void *arg);
 
 void *main_thr_func(void *arg);
 
+struct Seat {
 
+   pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
+}
 
+struct Request {
+
+   int time_out;
+   int num_wanted_seats;
+   char pref_seat_list;
+}
 
 int main(int argc, char *argv[]) {
    
