@@ -1,8 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
+#include <fcntl.h>	
+
+int fdrequests;
+int fdans;
+
+void createOpenAnswerFIFO(pid_t pid);
+void openRequestsFIFO();
+void sendRequest();
 
 int main(int argc, char *argv[]) {
    time_t initial=time(NULL);
@@ -20,18 +29,30 @@ int main(int argc, char *argv[]) {
 	printf("num_wanted_seats must be a value above 0\n");
 	return -1;
    }
-   int time_out=argv[1];
+   int time_out=atoi(argv[1]);
 
-   int fd=createOpenAnswerFIFO(getpid());
+   createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
    /*verifica se obteve resposta*/
    while((time(NULL)-initial)<time_out){
-      
+
    }
+
+   openRequestsFIFO();
+
+   sendRequest();
    
    return 0;
 }
 
-int createOpenAnswerFIFO(pid_t pid){
+void openRequestsFIFO(){
+    if((fdrequests = open("requests",O_WRONLY)) < 0){       // APPEND?
+
+        printf("Error when opening requests FIFO\n");
+        exit(1);
+    }
+}
+
+void createOpenAnswerFIFO(pid_t pid){
 
    char str[3]="ans";
    char *end=str;
@@ -43,13 +64,14 @@ int createOpenAnswerFIFO(pid_t pid){
 	exit(1);
    }
    
-   int fd;
-   
-   if((fd = open(str, O_WRONLY) < 0){
+   if((fdans = open(str,O_RDONLY)) < 0){
 
 	printf("Error when opening an answer FIFO\n");
 	exit(1);
    }
-   
-   return fd;
+
+}
+
+void sendRequest(){
+
 }
