@@ -38,6 +38,13 @@ int main(int argc, char *argv[]) {
 	printf("open_time must be a value above 0\n");
 	return -1;
    }
+	
+   Seat allSeats[argv[1]];
+   for(int i = 0; i < argv[1]; i++){
+	
+	allSeats[i].pid = -1;
+   }
+
    
    createRequestFIFO();
    openRequestFIFO();
