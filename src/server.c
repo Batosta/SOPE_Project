@@ -7,8 +7,11 @@ void createTicketOfficeThread();
 void createRequestFIFO();
 struct Request tryToReadRequest();
 void printRequest(struct Request r);
+void createMainThread();
 
 int REQUEST_FD;
+struct Request buffer = {0};
+struct Request NullRequest = {0};
 
 int main(int argc, char *argv[]) {
    
@@ -29,6 +32,7 @@ int main(int argc, char *argv[]) {
 	return -1;
    }
 
+
    int nSeats=atoi(argv[1]);
    struct Seat allSeats[nSeats];
    for(int i = 0; i < nSeats; i++){
@@ -38,16 +42,16 @@ int main(int argc, char *argv[]) {
    createRequestFIFO();
    openRequestFIFO();
 
-   struct Request request = tryToReadRequest();
+   createMainThread();
 
-
-   printRequest(request);
+   //printRequest(request);
    
    int n=atoi(argv[2]);
    for(int i = 0; i < n; i++){
-
 	createTicketOfficeThread();
    }
+
+   unlink("requests");
 }
 
 void createRequestFIFO(){
@@ -80,9 +84,8 @@ struct Request tryToReadRequest(){
 void createMainThread(){
    
    pthread_t tid;
-
    pthread_create(&tid, NULL, main_thr_func, NULL);
-   pthread_join(tid, NULL);
+   //pthread_join(tid, NULL);
 }
 
 
@@ -94,7 +97,7 @@ void createTicketOfficeThread(){
    pthread_t tid;
 
    pthread_create(&tid, NULL, ticket_office_thr_func, NULL);
-   pthread_join(tid, NULL);
+   //pthread_join(tid, NULL);
 }
 
 /*
@@ -102,7 +105,12 @@ Falta por esta funcao a fazer alguma coisa
 */
 void *ticket_office_thr_func(void *arg) {
 
-   printf("New Ticket Ofiice Thread\n");
+   printf("New Ticket Office Thread\n");
+
+   struct Request request = buffer;
+
+   
+
    return NULL;
 }
 
@@ -112,27 +120,20 @@ Provavelmente vai ter de receber alguma cena (os requests) todos
 */
 void *main_thr_func(void *arg){
 
-   printf("Main Thread Called");
-  // while(1){
-/*qualquer merda de por num buffer de tamanho unitário, é este buffer que vai ser usado pelas bilheteiras*/
-   
-   //}
-   return NULL;
+    struct Request request={0};
+
+    printf("Main Thread Called");
+
+   while(1){                            //LER REQUEST
+       request = tryToReadRequest();
+       buffer = request;
+   }
+
+    return NULL;
 }
 
-void printRequest(struct Request r){
-    printf("%d\n",r.num_wanted_seats);
-    printf("%ld\n",(long)r.pid);
-    printf("%s\n",r.pref_seat_list);
+void printRequest(struct Request r) {
+    printf("%d\n", r.num_wanted_seats);
+    printf("%ld\n", (long) r.pid);
+    //printf("%s\n",r.pref_seat_list);
 }
-
-
-
-
-
-
-
-
-
-
-

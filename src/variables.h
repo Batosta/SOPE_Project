@@ -21,6 +21,8 @@
 
 
 
+
+
 struct Seat {
     pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
 };
