@@ -9,6 +9,8 @@ void *ticket_office_thr_func(void *arg);
 void *main_thr_func(void *arg);
 
 
+
+
 int main(int argc, char *argv[]) {
    
    if (argc!=4){
@@ -96,6 +98,10 @@ Provavelmente vai ter de receber alguma cena (os requests) todos
 void *main_thr_func(void *arg){
 
    printf("Main Thread Called");
+   while(true){
+/*qualquer merda de por num buffer de tamanho unitário, é este buffer que vai ser usado pelas bilheteiras*/
+   
+   }
    return NULL;
 }
 

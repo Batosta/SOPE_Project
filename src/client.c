@@ -2,9 +2,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 int main(int argc, char *argv[]) {
-
+   time_t initial=time(NULL);
    printf("** Running process %d (PGID %d) **\n", getpid(), getpgrp());
    
    if (argc!=4){
@@ -19,8 +20,13 @@ int main(int argc, char *argv[]) {
 	printf("num_wanted_seats must be a value above 0\n");
 	return -1;
    }
+   int time_out=argv[1];
 
-   createOpenAnswerFIFO(getpid());
+   int fd=createOpenAnswerFIFO(getpid());
+   /*verifica se obteve resposta*/
+   while((time(NULL)-initial)<time_out){
+      
+   }
    
    return 0;
 }
