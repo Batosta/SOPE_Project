@@ -35,15 +35,12 @@ int main(int argc, char *argv[]) {
 	allSeats[i].pid = -1;
    }
 
-   printf("print1\n");
    createRequestFIFO();
-   printf("print5\n");
    openRequestFIFO();
 
-    printf("print2\n");
    struct Request request = tryToReadRequest();
 
-    printf("print3\n");
+
    printRequest(request);
    
    int n=atoi(argv[2]);
