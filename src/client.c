@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <time.h>
-#include <fcntl.h>	
+#include "variables.h"
 
-int fdrequests;
+int REQUEST_FD;
 int fdans;
 
 void createOpenAnswerFIFO(pid_t pid);
@@ -33,19 +27,21 @@ int main(int argc, char *argv[]) {
 
    createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
    /*verifica se obteve resposta*/
-   while((time(NULL)-initial)<time_out){
+   /*while((time(NULL)-initial)<time_out){
 
-   }
-
+   }*/
+   printf("clientprint1\n");
    openRequestsFIFO();
+    printf("clientprint2\n");
 
-   sendRequest();
-   
+   sendRequest(atoi(argv[2]),argv[3]);
+
+    printf("clientprint3\n");
    return 0;
 }
 
 void openRequestsFIFO(){
-    if((fdrequests = open("requests",O_WRONLY)) < 0){       // APPEND?
+    if((REQUEST_FD = open("requests",O_WRONLY)) < 0){       // APPEND?
 
         printf("Error when opening requests FIFO\n");
         exit(1);
@@ -72,6 +68,10 @@ void createOpenAnswerFIFO(pid_t pid){
 
 }
 
-void sendRequest(){
-
+void sendRequest(int seats, char* seat_list){
+    struct Request *request = malloc(sizeof(struct Request));
+    request->pid = getpid();
+    request->num_wanted_seats = seats;
+    request->pref_seat_list = seat_list;
+    write(REQUEST_FD, request, sizeof(struct Request));
 }

@@ -1,30 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <fcntl.h>
+#include "variables.h"
 
 void *ticket_office_thr_func(void *arg);
-int openRequestFIFO();
+void openRequestFIFO();
 void *main_thr_func(void *arg);
 void createTicketOfficeThread();
 void createRequestFIFO();
+struct Request tryToReadRequest();
+void printRequest(struct Request r);
 
-int fd;
-
-struct Seat {
-
-   pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
-};
-
-struct Request {
-
-   pid_t pid;
-   int num_wanted_seats;
-   char * pref_seat_list;
-};
+int REQUEST_FD;
 
 int main(int argc, char *argv[]) {
    
@@ -44,17 +28,23 @@ int main(int argc, char *argv[]) {
 	printf("open_time must be a value above 0\n");
 	return -1;
    }
-	
+
    int nSeats=atoi(argv[1]);
-   Seat allSeats[nSeats];
+   struct Seat allSeats[nSeats];
    for(int i = 0; i < nSeats; i++){
-	
 	allSeats[i].pid = -1;
    }
 
-   
+   printf("print1\n");
    createRequestFIFO();
+   printf("print5\n");
    openRequestFIFO();
+
+    printf("print2\n");
+   struct Request request = tryToReadRequest();
+
+    printf("print3\n");
+   printRequest(request);
    
    int n=atoi(argv[2]);
    for(int i = 0; i < n; i++){
@@ -72,26 +62,21 @@ void createRequestFIFO(){
    }
 }
 
-int openRequestFIFO(){
+void openRequestFIFO(){
    
-   if((fd = open("requests",O_RDONLY)) < 0){
-	
+   if((REQUEST_FD = open("requests",O_RDONLY)) < 0){
 	printf("Error when opening the request FIFO\n");
 	exit(1);
    }
-   
-   return fd;
+
 }
 
-void tryToReadRequest(){
-  char * buf;
-  read(fd,buf,WIDTH_PID);
-  request.pid=atoi(buf);
-  read(fd,buf,1);
-  read(fd,buf,WIDTH_SEAT);
-  request.num_wanted_seats=atoi(buf);
-  read(fd,buf,1);
-/*falta ler os prefered seats, não sei como fazer e nem sei se isto está bem*/
+struct Request tryToReadRequest(){
+  struct Request r;
+  if(read(REQUEST_FD,&r,sizeof(struct Request))==-1){
+      printf("Error reading request\n");
+  }
+    return r;
 }
 
 
@@ -131,11 +116,17 @@ Provavelmente vai ter de receber alguma cena (os requests) todos
 void *main_thr_func(void *arg){
 
    printf("Main Thread Called");
-   while(true){
+  // while(1){
 /*qualquer merda de por num buffer de tamanho unitário, é este buffer que vai ser usado pelas bilheteiras*/
    
-   }
+   //}
    return NULL;
+}
+
+void printRequest(struct Request r){
+    printf("%d\n",r.num_wanted_seats);
+    printf("%ld\n",(long)r.pid);
+    printf("%s\n",r.pref_seat_list);
 }
 
 

@@ -1,4 +1,11 @@
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <time.h>
+#include <fcntl.h>
+#include <pthread.h>
 
 
 //numero maximo de uma sala
@@ -12,3 +19,14 @@
 //isto tem haver com guardar nos ficheiros
 #define WIDTH_SEAT 4
 
+
+
+struct Seat {
+    pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
+};
+
+struct Request {
+    pid_t pid;
+    int num_wanted_seats;
+    char * pref_seat_list;
+};
