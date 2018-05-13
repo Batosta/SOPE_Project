@@ -1,24 +1,30 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <fcntl.h>
 
 void *ticket_office_thr_func(void *arg);
-
+int openRequestFIFO();
 void *main_thr_func(void *arg);
+void createTicketOfficeThread();
+void createRequestFIFO();
+
+int fd;
 
 struct Seat {
 
    pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
-}
+};
 
 struct Request {
 
-   int time_out;
+   pid_t pid;
    int num_wanted_seats;
-   char pref_seat_list;
-}
+   char * pref_seat_list;
+};
 
 int main(int argc, char *argv[]) {
    
@@ -39,8 +45,9 @@ int main(int argc, char *argv[]) {
 	return -1;
    }
 	
-   Seat allSeats[argv[1]];
-   for(int i = 0; i < argv[1]; i++){
+   int nSeats=atoi(argv[1]);
+   Seat allSeats[nSeats];
+   for(int i = 0; i < nSeats; i++){
 	
 	allSeats[i].pid = -1;
    }
@@ -48,8 +55,9 @@ int main(int argc, char *argv[]) {
    
    createRequestFIFO();
    openRequestFIFO();
-
-   for(int i = 0; i < argv[2]; i++){
+   
+   int n=atoi(argv[2]);
+   for(int i = 0; i < n; i++){
 
 	createTicketOfficeThread();
    }
@@ -66,8 +74,6 @@ void createRequestFIFO(){
 
 int openRequestFIFO(){
    
-   int fd;
-   
    if((fd = open("requests",O_RDONLY)) < 0){
 	
 	printf("Error when opening the request FIFO\n");
@@ -75,6 +81,17 @@ int openRequestFIFO(){
    }
    
    return fd;
+}
+
+void tryToReadRequest(){
+  char * buf;
+  read(fd,buf,WIDTH_PID);
+  request.pid=atoi(buf);
+  read(fd,buf,1);
+  read(fd,buf,WIDTH_SEAT);
+  request.num_wanted_seats=atoi(buf);
+  read(fd,buf,1);
+/*falta ler os prefered seats, não sei como fazer e nem sei se isto está bem*/
 }
 
 
