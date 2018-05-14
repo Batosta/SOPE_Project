@@ -19,10 +19,6 @@ int main(int argc, char *argv[]) {
    	return -1;
    }
 
-   /*verifica se obteve resposta*/
-   /*while((time(NULL)-initial)<time_out){
-
-   }*/
    openRequestsFIFO();
 
    sendRequest(atoi(argv[2]),argv[3],atoi(argv[1]));
@@ -51,14 +47,11 @@ void createOpenAnswerFIFO(pid_t pid){
 	exit(1);
    }
 
-   printf("Antes\n");
    if((fdans = open(str,O_RDONLY)) < 0){
 
 	printf("Error when opening an answer FIFO\n");
 	exit(1);
    }
-    printf("Depois\n");
-
 }
 
 void sendRequest(int seats, char* seat_list, int time_out) {
@@ -82,7 +75,7 @@ void sendRequest(int seats, char* seat_list, int time_out) {
 }
 
 void readAnswer() {
-    //char answer[MAX_CLI_SEATS+1];
+
     int ans;
     while (1) {
         if(read(fdans, &ans, sizeof(int))>0)
