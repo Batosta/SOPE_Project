@@ -1,6 +1,8 @@
 #include "variables.h"
 
-#define DELAY()                                         //  NAO É USADA AINDA
+#define DELAY()  usleep(1000*1000);                                       //  NAO É USADA AINDA - Espera 1seg
+
+pthread_mutex_t mutex;
 
 void *ticket_office_thr_func(void *arg);
 void openRequestFIFO();
@@ -38,6 +40,7 @@ int main(int argc, char *argv[]) {
 	return -1;
    }
 
+   //pthread_mutex_init(&mutex,NULL);s
 
    int nSeats=atoi(argv[1]);
    struct Seat allSeats[nSeats];
