@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
    openRequestsFIFO();
 
    sendRequest(atoi(argv[2]),argv[3],atoi(argv[1]));
-   // createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
+   createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
 
    return 0;
 }
@@ -40,9 +40,8 @@ void openRequestsFIFO(){
 
 void createOpenAnswerFIFO(pid_t pid){
 
-   char str[3]="ans";
-   char *end=str;
-   end+=sprintf(end+3,"%ld",(long)pid);
+    char str[50];
+    sprintf(str,"%s%ld", "ans", (long)pid);
 
    if(mkfifo(str, 0660) == -1){
 
@@ -62,7 +61,24 @@ void sendRequest(int seats, char* seat_list, int time_out){
     struct Request *request = malloc(sizeof(struct Request));
     request->pid = getpid();
     request->num_wanted_seats = seats;
-    request->pref_seat_list = seat_list;
+    request->pref_seat_list = createSeats(seat_list);
+    printf("REQUESTCLIENT:\n");
+    printf("%s",request->pref_seat_list);
     request->time_out = time_out;
     write(REQUEST_FD, request, sizeof(struct Request));
+}
+
+int * createSeats(char * list){
+    int lugares[MAX_CLI_SEATS];
+    const char s[2] = " ";
+    char * lugar;
+    int i=0;
+    lugar = strtok(list, s);
+
+    while(lugar != NULL) {
+        lugares[i] = atoi(lugar);
+        lugar = strtok(NULL, s);
+        i++;
+    }
+    return lugares;
 }
