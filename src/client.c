@@ -18,6 +18,8 @@ int main(int argc, char *argv[]) {
    	return -1;
    }
 
+   writeMessage("cbook.txt", "ola");   
+
    /*verifica se obteve resposta*/
    /*while((time(NULL)-initial)<time_out){
 
@@ -66,3 +68,5 @@ void sendRequest(int seats, char* seat_list, int time_out){
     request->time_out = time_out;
     write(REQUEST_FD, request, sizeof(struct Request));
 }
+
+
