@@ -6,6 +6,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <string.h>
 
 
 //numero maximo de uma sala

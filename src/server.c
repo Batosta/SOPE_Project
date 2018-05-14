@@ -1,5 +1,7 @@
 #include "variables.h"
 
+#define DELAY()                                         //  NAO É USADA AINDA
+
 void *ticket_office_thr_func(void *arg);
 void openRequestFIFO();
 void *main_thr_func(void *arg);
@@ -8,6 +10,10 @@ void createRequestFIFO();
 struct Request tryToReadRequest();
 void printRequest(struct Request r);
 void createMainThread();
+
+int isSeatFree(struct Seat *seats, int seatNum);
+void bookSeat(struct Seat *seats, int seatNum, int clientId);
+void freeSeat(struct Seat *seats, int seatNum);
 
 int REQUEST_FD;
 struct Request buffer = {0};
@@ -19,15 +25,15 @@ int main(int argc, char *argv[]) {
    	printf("Usage: client <num_room_seats> <num_ticket_offices> <open_time>\n");
    	return -1;
    }
-   if(argv[1] < 0){
+   if(atoi(argv[1]) <= 0){
 	printf("num_room_seats must be a value above 0\n");
 	return -1;
    }
-   if(argv[2] < 0){
+   if(atoi(argv[2]) <= 0){
 	printf("num_ticket_offices must be a value above 0\n");
 	return -1;
    }
-   if(argv[3] < 0){
+   if(atoi(argv[3]) <= 0){
 	printf("open_time must be a value above 0\n");
 	return -1;
    }
@@ -36,7 +42,7 @@ int main(int argc, char *argv[]) {
    int nSeats=atoi(argv[1]);
    struct Seat allSeats[nSeats];
    for(int i = 0; i < nSeats; i++){
-	allSeats[i].pid = -1;
+	allSeats[i].pid = -1;                   // lugar livre se pid == -1
    }
 
    createRequestFIFO();
@@ -48,7 +54,7 @@ int main(int argc, char *argv[]) {
    
    int n=atoi(argv[2]);
    for(int i = 0; i < n; i++){
-	createTicketOfficeThread();
+	createTicketOfficeThread(allSeats);
    }
 
    unlink("requests");
@@ -92,11 +98,11 @@ void createMainThread(){
 /*
 Depois as threads auxiliares (bilheteiras) vão ao buffer buscar estes requests do buffer.
 */
-void createTicketOfficeThread(){
+void createTicketOfficeThread(struct Seat *allSeats){
 
    pthread_t tid;
 
-   pthread_create(&tid, NULL, ticket_office_thr_func, NULL);
+   pthread_create(&tid, NULL, ticket_office_thr_func, allSeats);
    //pthread_join(tid, NULL);
 }
 
@@ -107,9 +113,39 @@ void *ticket_office_thr_func(void *arg) {
 
    printf("New Ticket Office Thread\n");
 
-   struct Request request = buffer;
+   int lugarocupado = 0;
 
-   
+   struct Seat *seats = arg;
+
+   struct Request request = buffer;
+   buffer = NullRequest;
+   char * lugares;
+   char* lugar;
+   const char s[2] = " ";
+
+   lugares = request.pref_seat_list;
+
+    lugar = strtok(lugares,s);
+
+    while(lugar != NULL){
+        if(isSeatFree(seats,atoi(lugar))) {
+            bookSeat(seats, atoi(lugar), request.pid);
+        } else {
+            lugarocupado = 1;
+            break;
+        }
+        lugar = strtok(lugares,s);
+    }
+
+    lugares = request.pref_seat_list;
+
+    if(lugarocupado == 1) {
+        lugar = strtok(lugares, s);
+        while (lugar != NULL) {
+            freeSeat(seats,atoi(lugar));
+            lugar = strtok(lugares, s);
+        }
+    }
 
    return NULL;
 }
@@ -136,4 +172,16 @@ void printRequest(struct Request r) {
     printf("%d\n", r.num_wanted_seats);
     printf("%ld\n", (long) r.pid);
     //printf("%s\n",r.pref_seat_list);
+}
+
+int isSeatFree(struct Seat *seats, int seatNum){
+    return seats[seatNum-1].pid == -1;
+}
+
+void bookSeat(struct Seat *seats, int seatNum, pid_t clientId){
+    seats[seatNum-1].pid = clientId;
+}
+
+void freeSeat(struct Seat *seats, int seatNum){
+    seats[seatNum-1].pid = -1;
 }
