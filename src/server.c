@@ -145,6 +145,9 @@ void *ticket_office_thr_func(void *arg) {
     }
     printf("SAIU\n");
 
+    int answer[MAX_CLI_SEATS+1];
+    write(fdans,answer,sizeof(answer));
+
     pthread_mutex_unlock(&mutex);
 
    return NULL;
@@ -195,7 +198,7 @@ int checkRequestConditions(struct Seat * seats, struct Request request) {
     printf("peidoinicial\n");
     int lugarocupado = 0;
     const char s[2] = " ";
-    char * lugar;
+    int lugar = -1;
     char * lugares;
     int counter = 0;
 
@@ -205,28 +208,27 @@ int checkRequestConditions(struct Seat * seats, struct Request request) {
         return -1;
     }
 
-    printf("%s",request.pref_seat_list);
 
-    printf("peido2.1\n");
-    lugar = strtok(request.pref_seat_list, s);
-    printf("peido2\n");
-    while(lugar != NULL) {
+    lugar = request.pref_seat_list[0];
 
-        if(atoi(lugar) > MAX_ROOM_SEATS || atoi(lugar) <= 0) {
-            printf("All wanted seats must be values above 0 and below MAX_ROOM_SEATS.\n");
+    for( int i = 1 ; lugar != 0 ; i++) {
+
+        if(lugar > MAX_ROOM_SEATS || lugar <= 0) {
+            printf("All wanted seats must be values above 0 and below MAX_ROOM_SEATS%d.\n",lugar);
             return -3;
         }
 
-        if(isSeatFree(seats,atoi(lugar))) {
-            bookSeat(seats, atoi(lugar), request.pid);
+        if(isSeatFree(seats,lugar)) {
+            bookSeat(seats, lugar, request.pid);
         } else {
             lugarocupado = 1;
             break;
         }
 
-        lugar = strtok(NULL, s);
+        lugar = request.pref_seat_list[i];
         counter++;
     }
+
     if(counter > MAX_CLI_SEATS || counter < request.num_wanted_seats){
         printf("The wanted seats must have a size above num_wanted_seats and below MAX_CLI_SEATS.\n");
         return -2;
@@ -241,15 +243,10 @@ int checkRequestConditions(struct Seat * seats, struct Request request) {
         return -4;
     }
 
-    lugares = request.pref_seat_list;
-
-    lugar = strtok(lugares,s);
-
-    if(lugarocupado == 1) {
-        lugar = strtok(lugares, s);
-        while (lugar != NULL) {
-            freeSeat(seats,atoi(lugar));
-            lugar = strtok(lugares, s);
+    if (lugarocupado == 1) {
+        for( int i = 0 ; lugar != 0 ; i++) {
+            lugar = request.pref_seat_list[i];
+            freeSeat(seats, lugar);
         }
     }
     printf("peido3\n");

@@ -18,8 +18,6 @@ int main(int argc, char *argv[]) {
    	return -1;
    }
 
-   writeMessage("cbook.txt", "ola");   
-
    /*verifica se obteve resposta*/
    /*while((time(NULL)-initial)<time_out){
 
@@ -59,28 +57,33 @@ void createOpenAnswerFIFO(pid_t pid){
 
 }
 
-void sendRequest(int seats, char* seat_list, int time_out){
+void sendRequest(int seats, char* seat_list, int time_out) {
     struct Request *request = malloc(sizeof(struct Request));
     request->pid = getpid();
     request->num_wanted_seats = seats;
-    request->pref_seat_list = createSeats(seat_list);
+
+    const char s[2] = " ";
+    char *lugar;
+    int i = 0;
+    lugar = strtok(seat_list, s);
+
+    while (lugar != NULL) {
+        request->pref_seat_list[i] = atoi(lugar);
+        lugar = strtok(NULL, s);
+        i++;
+    }
+
     printf("REQUESTCLIENT:\n");
-    printf("%s",request->pref_seat_list);
+    for (int n = 0; n < sizeof(request->pref_seat_list); n++) {
+        printf("%d - ", request->pref_seat_list[n]);
+    }
     request->time_out = time_out;
     write(REQUEST_FD, request, sizeof(struct Request));
 }
 
-int * createSeats(char * list){
-    int lugares[MAX_CLI_SEATS];
-    const char s[2] = " ";
-    char * lugar;
-    int i=0;
-    lugar = strtok(list, s);
-
-    while(lugar != NULL) {
-        lugares[i] = atoi(lugar);
-        lugar = strtok(NULL, s);
-        i++;
-    }
-    return lugares;
+int * intdup(int const * src, size_t len)
+{
+    int * p = malloc(len * sizeof(int));
+    memcpy(p, src, len * sizeof(int));
+    return p;
 }
