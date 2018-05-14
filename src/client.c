@@ -18,6 +18,8 @@ int main(int argc, char *argv[]) {
    	return -1;
    }
 
+   writeMessage("cbook.txt", "ola");   
+
    /*verifica se obteve resposta*/
    /*while((time(NULL)-initial)<time_out){
 

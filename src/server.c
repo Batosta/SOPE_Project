@@ -1,7 +1,5 @@
 #include "variables.h"
 
-#define DELAY()  usleep(1000*1000);                                       //  NAO É USADA AINDA - Espera 1seg
-
 pthread_mutex_t mutex;
 
 void *ticket_office_thr_func(void *arg);
