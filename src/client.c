@@ -6,6 +6,7 @@ int fdans;
 void createOpenAnswerFIFO(pid_t pid);
 void openRequestsFIFO();
 void sendRequest();
+void readAnswer();
 int checkRequestConditions(char * argv[]);		//Faltam as condições -5 e -6
 
 int main(int argc, char *argv[]) {
@@ -26,6 +27,9 @@ int main(int argc, char *argv[]) {
 
    sendRequest(atoi(argv[2]),argv[3],atoi(argv[1]));
    createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
+    readAnswer();
+
+    printf("cocoxixi\n");
 
    return 0;
 }
@@ -81,9 +85,13 @@ void sendRequest(int seats, char* seat_list, int time_out) {
     write(REQUEST_FD, request, sizeof(struct Request));
 }
 
-int * intdup(int const * src, size_t len)
-{
-    int * p = malloc(len * sizeof(int));
-    memcpy(p, src, len * sizeof(int));
-    return p;
+void readAnswer(){
+    //char answer[MAX_CLI_SEATS+1];
+    int ans;
+    read(fdans,&ans,sizeof(int));
+    if(ans < 0){
+        printf("answer: %d\n", ans);
+        return;
+    }
+
 }

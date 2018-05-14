@@ -143,11 +143,19 @@ void *ticket_office_thr_func(void *arg) {
     if((stat=checkRequestConditions(seats,request)) != 0){
         printf("inside if\n");
         write(fdans,&stat,sizeof(stat));
+        pthread_exit(NULL);
     }
     printf("SAIU\n");
 
     int answer[MAX_CLI_SEATS+1];
-    write(fdans,answer,sizeof(answer));
+    answer[0] = 5;
+
+    write(fdans,request.num_wanted_seats,sizeof(int));
+    for(int i = 0 ; i < request.num_wanted_seats ; i++) {
+        write(fdans, request.pref_seat_list[i], sizeof(int));
+        printf("lugar: %d", request.pref_seat_list[i]);
+    }
+
 
     pthread_mutex_unlock(&mutex);
 
@@ -179,7 +187,10 @@ void printRequest(struct Request r) {
     printf("REQUEST:\n");
     printf("%d\n", r.num_wanted_seats);
     printf("%ld\n", (long) r.pid);
-    printf("%s\n",r.pref_seat_list);
+    for (int n = 0; n < sizeof(r.pref_seat_list); n++) {
+        printf("%d - ", r.pref_seat_list[n]);
+    }
+    printf("REQUEST printed:\n");
 }
 
 int isSeatFree(struct Seat * seats, int seatNum){
