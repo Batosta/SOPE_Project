@@ -23,7 +23,7 @@ void writeNumber(char *filename, int number){
    fprintf(file, str);
 }
 
-void writeMessage(char *filename, char message){
+void writeMessage(char *filename, char *message){
 
    FILE *file;
    file = fopen(filename, "a+");

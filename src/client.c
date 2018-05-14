@@ -29,8 +29,6 @@ int main(int argc, char *argv[]) {
    createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
     readAnswer();
 
-    printf("cocoxixi\n");
-
    return 0;
 }
 
@@ -53,11 +51,13 @@ void createOpenAnswerFIFO(pid_t pid){
 	exit(1);
    }
 
+   printf("Antes\n");
    if((fdans = open(str,O_RDONLY)) < 0){
 
 	printf("Error when opening an answer FIFO\n");
 	exit(1);
    }
+    printf("Depois\n");
 
 }
 
@@ -77,18 +77,17 @@ void sendRequest(int seats, char* seat_list, int time_out) {
         i++;
     }
 
-    printf("REQUESTCLIENT:\n");
-    for (unsigned int n = 0; n < sizeof(request->pref_seat_list); n++) {
-        printf("%d - ", request->pref_seat_list[n]);
-    }
     request->time_out = time_out;
     write(REQUEST_FD, request, sizeof(struct Request));
 }
 
-void readAnswer(){
+void readAnswer() {
     //char answer[MAX_CLI_SEATS+1];
     int ans;
-    read(fdans,&ans,sizeof(int));
+    while (1) {
+        if(read(fdans, &ans, sizeof(int))>0)
+            break;
+    }
     if(ans < 0){
         printf("answer: %d\n", ans);
         return;

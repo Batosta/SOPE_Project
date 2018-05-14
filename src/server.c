@@ -10,6 +10,7 @@ void createRequestFIFO();
 int checkRequestConditions(struct Seat * seats, struct Request request);
 struct Request tryToReadRequest();
 void printRequest(struct Request r);
+void processRequest(struct Request request, struct Seat * seats);
 void createMainThread();
 int openAnsFIFO(pid_t pid);
 
@@ -19,8 +20,7 @@ void freeSeat(struct Seat *seats, int seatNum);
 
 int REQUEST_FD;
 pthread_t main_thread_tid;
-struct Request * buffer = NULL;
-struct Request NullRequest = {0};
+struct Request buffer;
 
 pthread_mutex_t mutex;
 
@@ -43,6 +43,9 @@ int main(int argc, char *argv[]) {
 	return -1;
    }
 
+    //buffer = malloc(sizeof(buffer));
+   buffer.pid = -1;
+
    //pthread_mutex_init(&mutex,NULL);
    int nSeats=atoi(argv[1]);
    struct Seat allSeats[nSeats];
@@ -60,11 +63,22 @@ int main(int argc, char *argv[]) {
    //printRequest(request);
    
    int n=atoi(argv[2]);
-  // for(int i = 0; i < n; i++){
-	createTicketOfficeThread(allSeats);
+   int i =1;
+   //for(int i = 1; i < n; i++){
+//	createTicketOfficeThread(allSeats,i);
    //}
 
+    pthread_t tid;
+
+    //writeNumber("slog.txt", id);
+    //writeMessage("slog.txt", "-OPEN");
+    pthread_create(&tid, NULL, ticket_office_thr_func, allSeats);
+    //writeNumber("slog.txt", id);
+    //writeMessage("slog.txt", "-CLOSED");
+
+    pthread_join(tid,NULL);
     pthread_join(main_thread_tid,NULL);
+
     unlink("requests");
 }
 
@@ -105,61 +119,58 @@ void createTicketOfficeThread(struct Seat *allSeats, int id){
    pthread_t tid;
 
    writeNumber("slog.txt", id);
-   writeNumber("slog.txt", "-OPEN");
+   writeMessage("slog.txt", "-OPEN");
    pthread_create(&tid, NULL, ticket_office_thr_func, allSeats);
    writeNumber("slog.txt", id);
-   writeNumber("slog.txt", "-CLOSED");
+   writeMessage("slog.txt", "-CLOSED");
    
-   //pthread_join(tid, NULL);
+   pthread_join(tid, NULL);
 }
 
 void *ticket_office_thr_func(void *arg) {
 
-   printf("New Ticket Office Thread\n");
+    printf("New Ticket Office Thread\n");
 
-   
-   pthread_mutex_lock(&mutex);
+    //while(1){
+    pthread_mutex_lock(&mutex);
 
-   struct Seat *seats = arg;
-   struct Request request;
+    struct Seat *seats = arg;
+    struct Request request;
 
-   while(1) {
-       if (buffer != NULL) {
-            request = (*buffer);
-            break;
+    while (1) {                             //    enquanto o tempo da thread n acabar
+        if (buffer.pid != -1) {
+            request = buffer;
+            buffer.pid = -1;
+            processRequest(request,seats);
         }
-       else printf("BUFFER NULL\n");
-   }
-
-   buffer = NULL;
-
-   int stat;
-   int fdans;
-
-   printf("ANTES %ld\n", (long)request.pid);
-    fdans=openAnsFIFO(request.pid);
-    printf("DEPOIS%d\n",fdans);
-
-    if((stat=checkRequestConditions(seats,request)) != 0){
-        printf("inside if\n");
-        write(fdans,&stat,sizeof(stat));
-        pthread_exit(NULL);
     }
-    printf("SAIU\n");
-
-    int answer[MAX_CLI_SEATS+1];
-    answer[0] = 5;
-
-    write(fdans,request.num_wanted_seats,sizeof(int));
-    for(int i = 0 ; i < request.num_wanted_seats ; i++) {
-        write(fdans, request.pref_seat_list[i], sizeof(int));
-        printf("lugar: %d", request.pref_seat_list[i]);
-    }
-
 
     pthread_mutex_unlock(&mutex);
 
-   return NULL;
+   pthread_exit(NULL);
+}
+
+void processRequest(struct Request request, struct Seat * seats){
+
+    int stat;
+    int fdans;
+
+    fdans = openAnsFIFO(request.pid);
+
+    if ((stat = checkRequestConditions(seats, request)) != 0) {
+        printf("inside if\n");
+        write(fdans, &stat, sizeof(stat));
+    }
+    printf("SAIU\n");
+
+//    int answer[MAX_CLI_SEATS + 1];
+//    answer[0] = 5;
+//
+//    write(fdans, &request.num_wanted_seats, sizeof(int));
+//    for (int i = 0; i < request.num_wanted_seats; i++) {
+//        write(fdans, &request.pref_seat_list[i], sizeof(int));
+//        printf("lugar: %d", request.pref_seat_list[i]);
+//    }
 }
 
 /*
@@ -170,27 +181,23 @@ void *main_thr_func(void *arg){
 
     struct Request request;
 
-    buffer = malloc(sizeof(buffer));
-
     printf("Main Thread Called\n");
 
    while(1){                            //LER REQUEST
-           request = tryToReadRequest();
-           printRequest(request);
-           (*buffer) = request;
+       request = tryToReadRequest();
+       printRequest(request);
+       buffer = request;
+       printf("xixicicipula");
    }
 
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void printRequest(struct Request r) {
     printf("REQUEST:\n");
     printf("%d\n", r.num_wanted_seats);
     printf("%ld\n", (long) r.pid);
-    for (int n = 0; n < sizeof(r.pref_seat_list); n++) {
-        printf("%d - ", r.pref_seat_list[n]);
-    }
-    printf("REQUEST printed:\n");
+    printf("REQUEST printed\n");
 }
 
 int isSeatFree(struct Seat * seats, int seatNum){
@@ -207,19 +214,16 @@ void freeSeat(struct Seat * seats, int seatNum){
 
 int checkRequestConditions(struct Seat * seats, struct Request request) {
 
-    printf("peidoinicial\n");
     int lugarocupado = 0;
     const char s[2] = " ";
     int lugar = -1;
     char * lugares;
     int counter = 0;
 
-    printf("peido1\n");
     if(request.num_wanted_seats >= MAX_CLI_SEATS) {
         printf("num_wanted_seats must be a value below MAX_CLI_SEATS.\n");
         return -1;
     }
-
 
     lugar = request.pref_seat_list[0];
 
@@ -261,7 +265,6 @@ int checkRequestConditions(struct Seat * seats, struct Request request) {
             freeSeat(seats, lugar);
         }
     }
-    printf("peido3\n");
 
     return 0;
 }
@@ -270,6 +273,8 @@ int openAnsFIFO(pid_t pid){
     int fd;
     char str[50];
     sprintf(str,"%s%ld", "ans", (long)pid);
+
     fd=open(str,O_WRONLY);
+
     return fd;
 }
