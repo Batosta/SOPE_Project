@@ -17,9 +17,6 @@ int main(int argc, char *argv[]) {
    	printf("Usage: client <time_out> <num_wanted_seats> <pref_seat_list>\n");
    	return -1;
    }
-   if(checkRequestConditions(argv) != 0){
-	exit(1);
-   }
 
    /*verifica se obteve resposta*/
    /*while((time(NULL)-initial)<time_out){
@@ -27,7 +24,7 @@ int main(int argc, char *argv[]) {
    }*/
    openRequestsFIFO();
 
-   sendRequest(atoi(argv[2]),argv[3]);
+   sendRequest(atoi(argv[2]),argv[3],atoi(argv[1]));
    // createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
 
    return 0;
@@ -61,55 +58,11 @@ void createOpenAnswerFIFO(pid_t pid){
 
 }
 
-void sendRequest(int seats, char* seat_list){
+void sendRequest(int seats, char* seat_list, int time_out){
     struct Request *request = malloc(sizeof(struct Request));
     request->pid = getpid();
     request->num_wanted_seats = seats;
     request->pref_seat_list = seat_list;
+    request->time_out = time_out;
     write(REQUEST_FD, request, sizeof(struct Request));
 }
-
-int checkRequestConditions(char * argv[]) {
-
-   if(atoi(argv[2]) >= MAX_CLI_SEATS) {
-	printf("num_wanted_seats must be a value below MAX_CLI_SEATS.\n");
-	return -1;
-   }
-
-   const char s[2] = " ";
-   char *token;
-   token = strtok(argv[3], s);
-   int counter = 0;
-   while(token != NULL) {
-	
-	if(atoi(token) > MAX_ROOM_SEATS || atoi(token) <= 0){
-
-	   printf("All wanted seats must be values above 0 and below MAX_ROOM_SEATS.\n");
-	   return -3;
-	}
-	
-	token = strtok(NULL, s);
-	counter++;
-   }
-   if(counter > MAX_CLI_SEATS || counter < atoi(argv[2])){
-	printf("The wanted seats must have a size above num_wanted_seats and below MAX_CLI_SEATS.\n");
-	return -2;
-   }
-
-   if(atoi(argv[1]) <= 0) {
-	printf("time_out must be a value above 0.\n");
-	return -4;
-   }
-   if(atoi(argv[2]) <= 0) {
-	printf("num_wanted_seats must be a value above 0.\n");
-	return -4;
-   }
-
-   return 0;
-}
-
-
-
-
-
-

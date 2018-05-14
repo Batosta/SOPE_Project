@@ -31,6 +31,7 @@ struct Seat {
 
 struct Request {
     pid_t pid;
+    int time_out;
     int num_wanted_seats;
     char * pref_seat_list;
 };
