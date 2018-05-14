@@ -74,7 +74,7 @@ void sendRequest(int seats, char* seat_list, int time_out) {
     }
 
     printf("REQUESTCLIENT:\n");
-    for (int n = 0; n < sizeof(request->pref_seat_list); n++) {
+    for (unsigned int n = 0; n < sizeof(request->pref_seat_list); n++) {
         printf("%d - ", request->pref_seat_list[n]);
     }
     request->time_out = time_out;

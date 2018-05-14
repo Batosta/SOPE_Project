@@ -5,7 +5,7 @@ pthread_mutex_t mutex;
 void *ticket_office_thr_func(void *arg);
 void openRequestFIFO();
 void *main_thr_func(void *arg);
-void createTicketOfficeThread();
+void createTicketOfficeThread(struct Seat *allSeats, int id);
 void createRequestFIFO();
 int checkRequestConditions(struct Seat * seats, struct Request request);
 struct Request tryToReadRequest();
@@ -100,23 +100,24 @@ void createMainThread(){
 }
 
 
-/*
-Depois as threads auxiliares (bilheteiras) vão ao buffer buscar estes requests do buffer.
-*/
-void createTicketOfficeThread(struct Seat *allSeats){
+void createTicketOfficeThread(struct Seat *allSeats, int id){
 
    pthread_t tid;
+
+   writeNumber("slog.txt", id);
+   writeNumber("slog.txt", "-OPEN");
    pthread_create(&tid, NULL, ticket_office_thr_func, allSeats);
+   writeNumber("slog.txt", id);
+   writeNumber("slog.txt", "-CLOSED");
+   
    //pthread_join(tid, NULL);
 }
 
-/*
-Falta por esta funcao a fazer alguma coisa
-*/
 void *ticket_office_thr_func(void *arg) {
 
    printf("New Ticket Office Thread\n");
 
+   
    pthread_mutex_lock(&mutex);
 
    struct Seat *seats = arg;

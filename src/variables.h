@@ -29,5 +29,7 @@ struct Request {
 };
 
 
-void writeMessage(char *filename, char *message);
+//void writeNumber(char *filename, char *message, int value, int range);
+void writeNumber(char *filename, int number);
+void writeMessage(char *filename, char message);
 void cleanMessages();
