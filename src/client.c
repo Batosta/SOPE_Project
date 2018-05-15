@@ -56,14 +56,14 @@ void createOpenAnswerFIFO(pid_t pid){
 
 void sendRequest(int seats, char* seat_list, int time_out) {
 
-    char[5000] str;
+    char str[5000];
     sprintf(str, "%d %d %s\n", getpid(), seats, seat_list);
     write(REQUEST_FD, str, strlen(str));
 }
 
 void readAnswer() {
 
-    char[1000] ans;
+    char ans[1000];
     
     int stat = read(fdans, &ans, 1000);
 

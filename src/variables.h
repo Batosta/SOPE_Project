@@ -18,18 +18,23 @@
 #define DELAY()  usleep(1000*1000);      //  NAO É USADA AINDA - Espera 1seg
 
 struct Seat {
-    pid_t pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
+    int pid;		//pid = pid do cliente (se ocupado) OU -1 (se não ocupado)
 };
 
 struct Request {
-    pid_t pid;
+    int pid;
     int time_out;
     int num_wanted_seats;
     int pref_seat_list[MAX_CLI_SEATS];
 };
 
+extern struct Seat allSeats[MAX_ROOM_SEATS];
+extern int nSeats;
 
 //void writeNumber(char *filename, char *message, int value, int range);
 void writeNumber(char *filename, int number);
 void writeMessage(char *filename, char *message);
 void cleanMessages();
+
+
+
