@@ -13,6 +13,10 @@
    printf("oi3\n");
 }*/
 
+
+struct Seat allSeats[MAX_ROOM_SEATS];
+int nSeats = 0;
+
 void writeNumber(char *filename, int number){
    
    FILE *file;
