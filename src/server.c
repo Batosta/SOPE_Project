@@ -8,7 +8,7 @@ void *main_thr_func(void *arg);
 void createTicketOfficeThread(struct Seat *allSeats, int id);
 void createRequestFIFO();
 int checkRequestConditions(struct Seat * seats, struct Request request);
-struct Request tryToReadRequest();
+void tryToReadRequest(char * str);
 void processRequest(struct Request request, struct Seat * seats);
 void createMainThread();
 int openAnsFIFO(pid_t pid);
@@ -18,8 +18,10 @@ void bookSeat(struct Seat *seats, int seatNum, int clientId);
 void freeSeat(struct Seat *seats, int seatNum);
 
 int REQUEST_FD;
+FILE* FILE_POINTER;
 pthread_t main_thread_tid;
-struct Request buffer;
+
+char * buffer;
 
 pthread_mutex_t mutex;
 
@@ -72,22 +74,20 @@ void createRequestFIFO(){
 
 void openRequestFIFO(){
    
-   if((REQUEST_FD = open("requests",O_RDONLY)) < 0){
+   if((REQUEST_FD = open("requests",O_RDONLY)) < 0) {
 	printf("Error when opening the request FIFO\n");
 	exit(1);
    }
+   FILE_POINTER = fdopen(REQUEST_FD, "r");
 
 }
 
-struct Request tryToReadRequest(){
-  struct Request r;
-  while (1)
-  {
-      if(read(REQUEST_FD,&r,sizeof(struct Request)) > 0){
-          return r;
-      }
-  }
-    return r;
+void tryToReadRequest(char * str){
+
+   size_t len = 0;
+   ssize_t read;
+
+   getline(&str, &len, stream);
 }
 
 
@@ -117,7 +117,7 @@ void *ticket_office_thr_func(void *arg) {
     pthread_mutex_lock(&mutex);
 
     struct Seat *seats = arg;
-    struct Request request;
+    char * str = NULL;
 
     while (1) {                             //    enquanto o tempo da thread n acabar
         if (buffer.pid != -1) {
@@ -144,7 +144,7 @@ void processRequest(struct Request request, struct Seat * seats){
 	writeMessage("slog.txt", "TO-");
         writeNumber("slog.txt", request.pid);
         writeMessage("slog.txt", "-");
-	writeNumber("slog.txt", request.num_wanted_seats);
+	writeNumber("slog.txt", request.num_wanted_seats);	
 	return;
     }
 
@@ -160,15 +160,16 @@ void processRequest(struct Request request, struct Seat * seats){
 
 void *main_thr_func(void *arg){
 
-    struct Request request;
-
+    char * str = NULL;
+    
     printf("Main Thread Called\n");
 
-   while(1){                            //LER REQUEST
-       request = tryToReadRequest();
-       buffer = request;
-   }
-
+	while(1){                //LER REQUEST
+	  if(buffer==NULL){
+          tryToReadRequest(str);
+          buffer = str;
+	  }
+	}
     pthread_exit(NULL);
 }
 
@@ -250,3 +251,34 @@ int openAnsFIFO(pid_t pid){
 
     return fd;
 }
+
+struct Request {
+    pid_t pid;
+    int time_out;
+    int num_wanted_seats;
+    int pref_seat_list[MAX_CLI_SEATS];
+};
+
+
+struct Request readRequestString(char * str){
+
+   struct Request r;
+   char * pref;
+   
+   sscanf(str, "%d %d %s\n", r.pid, r.num_wanted_seats, pref);
+
+   const char s[2] = " ";
+   char *lugar;
+   int i = 0;
+   lugar = strtok(pref, s);
+
+   while (lugar != NULL) {
+       r.pref_seat_list[i] = atoi(lugar);
+       lugar = strtok(NULL, s);
+       i++;
+   }
+}
+
+
+
+

@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
    openRequestsFIFO();
 
    sendRequest(atoi(argv[2]),argv[3],atoi(argv[1]));
-   createOpenAnswerFIFO(getpid());       //PARA LER a resposta. não para escrever
-    readAnswer();
+   createOpenAnswerFIFO(getpid());       		//PARA LER a resposta. não para escrever
+   readAnswer();
 
    return 0;
 }
@@ -55,35 +55,20 @@ void createOpenAnswerFIFO(pid_t pid){
 }
 
 void sendRequest(int seats, char* seat_list, int time_out) {
-    struct Request *request = malloc(sizeof(struct Request));
-    request->pid = getpid();
-    request->num_wanted_seats = seats;
 
-    const char s[2] = " ";
-    char *lugar;
-    int i = 0;
-    lugar = strtok(seat_list, s);
-
-    while (lugar != NULL) {
-        request->pref_seat_list[i] = atoi(lugar);
-        lugar = strtok(NULL, s);
-        i++;
-    }
-
-    request->time_out = time_out;
-    write(REQUEST_FD, request, sizeof(struct Request));
+    char[5000] str;
+    sprintf(str, "%d %d %s\n", getpid(), seats, seat_list);
+    write(REQUEST_FD, str, strlen(str));
 }
 
 void readAnswer() {
 
-    int ans;
-    while (1) {
-        if(read(fdans, &ans, sizeof(int))>0)
-            break;
-    }
-    if(ans < 0){
-        printf("answer: %d\n", ans);
+    char[1000] ans;
+    
+    int stat = read(fdans, &ans, 1000);
+
+    if(stat < 0){
+        printf("Error while reading.\n");
         return;
     }
-
 }
