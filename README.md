@@ -8,11 +8,12 @@ TODO:
 
 CLIENT
 
-1-Recebe como argumentos da consola 
+1-Recebe como argumentos da consola(DONE)
 
 	(client <time_out> <num_wanted_seats> <pref_seat_list>).
 
-2-cria FIFO ansXXXX.
+2-cria FIFO ansXXXX.(DONE)
+
 3-Envia ao servidor através do requests um pedido,pode ser através de uma struct.
 
 4-Aguarda a resposta.
@@ -37,16 +38,18 @@ CLIENT
 
 SERVER
 
-1-Recebe como argumentos da consola 
+1-Recebe como argumentos da consola(DONE)
 
 (server <num_room_seats> <num_ticket_offices> <open_time>).
 
-2-Cria o FIFO requests.
-3-Cria o numero de threads por bilheteira.
+2-Cria o FIFO requests.(DONE)
 
-4-O programa principal lê dos requests.
+3-Cria o numero de threads por bilheteira.(DONE)
+
+4-O programa principal lê dos requests.(falta guardar no buffer)
 
 5-Apenas lê quando o buffer está vazio.
+
 6-As bilheteiras apanham o buffer.
 
 7-Mutex para ler do buffer para só estar uma de cada vez a do mesmo.
@@ -68,6 +71,7 @@ SERVER
 -6 sala cheia.
 
 10-Array de mutex's uma para cada lugar ,
+
 	para impedir que haja 2 bilheteiras ou mais a tentarem reservar o mesmo lugar ao mesmo tempo.
 
 	Funções que as threads devem ter:
@@ -81,6 +85,7 @@ SERVER
 11-Aplicar um #define DELAY() nestas funções para simular a demora na execução.
 
 12-Enviar resposta ao cliente (criar uma struct asnwer?).
+
 13-Aplicar o time_out.
 
 14-Quando for para dar time_out a main manda as bilheteiras terminarem e aguarda que elas terminem.
@@ -88,19 +93,31 @@ SERVER
 15-Cada thread regista no slog.txt a abertura e fecho de si mesmo.
 
 16-Cada bilheteira escrever no slog.txt o registo dos lugares reservados.
+
 	(TO-CLIID-NT: aaaa bbbb cccc dddd... -XXX)
+
 		TO - Id da bilheteira.
+
 		CLIID - PID cliente.
+
 		NT - numero de lugares reservados.
 
 		aaaa/bbbb/cccc - lugares preferidos.
-XXX - lugares reservados/ERRO.
+
+			XXX - lugares reservados/ERRO.
+
 		Para cada caso de erro:
+
 			-1 MAX.
+
 			-2 NST.
+
 			-3 IID.
+
 			-4 ERR.
+
 			-5 NAV.
+
 			-6 FUL.
 
 17-Escrever no sbook.txt o identificador do lugar reservado, um por linha, com WIDTH_SEAT=4.
