@@ -16,7 +16,34 @@ int main(int argc, char *argv[]) {
 	}
 	
 	openRequestFIFO();
-	sendRequest(atoi(argv[2]),argv[3]);	
+
+//Creates the struct to send through the request FIFO
+	struct Request req;
+	req.pid=(int)getpid();
+	req.num_wanted_seats = atoi(argv[2]);
+
+	const char s[2] = " ";
+	char *token;
+	
+	int i = 0;
+	token = strtok(argv[3], s);
+	
+	while(token != NULL){
+		
+		if(atoi(token) > MAX_ROOM_SEATS || atoi(token) <= 0)
+			break;
+		else{
+			req.pref_seat_list[i] = atoi(token);
+			i++;
+			token = strtok(NULL,s);
+		}
+	}
+
+	sendRequest(req);
+//Until here
+
+
+
 }
 
 
@@ -35,17 +62,12 @@ void openRequestFIFO(){
 
 //void closeAnswerFIFO(const char* fifoName){ }
 
-//Ainda nao envia a struct
-//Function that sends through the "requests" FIFO a struct Request to the server
-void sendRequest(int nrlug,char pref[]){
 
-    printf("%d %s\n",nrlug,pref);
-    struct Request req;
-    req.pid=(int)getpid();
-    req.num_wanted_seats=nrlug;
-    // nao sei como passar de string para array de int.
-    printf("%d %d\n", req.pid,req.num_wanted_seats);
-    write(REQUEST_FD, &req, sizeof(struct Request));
+//O array de ints tem os lugares certos + lixo. Como o array é com size = 99, se metermos ./client x x "11 12 1 2", o array vai ser {11, 12, 1, 2, lixo, lixo, lixo, ...}
+//Function that sends through the "requests" FIFO a struct Request to the server
+void sendRequest(struct Request r){
+
+    write(REQUEST_FD, &r, sizeof(struct Request));
 } 
 
 
