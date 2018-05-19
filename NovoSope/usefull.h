@@ -23,3 +23,8 @@ struct Request {
     int num_wanted_seats;			//Client's number of wanted seats
     int pref_seat_list[MAX_CLI_SEATS];		//Client's array of preferred seats
 };
+
+
+//Functions that will take care of the writing on the .txt files
+void writeMessage(char *filename, char *message);
+void cleanMessages();
