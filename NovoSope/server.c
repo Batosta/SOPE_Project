@@ -2,8 +2,9 @@
 
 
 int REQUEST_FD;				//Request FIFO fd
-int ANSWER_FD;				//Answer FIFO fd
+int ANSWER_FD;				//Answer FIFO fd a aswer tem haver com cada pid por isso não pode ser global
 FILE* FILE_POINTER;			//File Pointer for the request fifo
+struct Request * buffer;
 
 int main(int argc, char *argv[]) {
 
@@ -58,10 +59,9 @@ void closeRequestFIFO(){
 //Ainda nao recebe a struct
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
-
-	char in[200];
-	read(REQUEST_FD, in, 200);
-	printf("%s\n", in);
+	struct Request req;
+	read(REQUEST_FD, &req, sizeof(struct Request));
+	printf("%d %d\n", req.pid,req.num_wanted_seats);
 }
 
 
@@ -103,7 +103,7 @@ void createTicketOfficeThread(int id){
 	
 	pthread_t tid;
 	pthread_create(&tid, NULL, ticketOfficeThread, NULL);			//2º NULL terá de ser alterado
-	pthread_join(tid, NULL);						//idk se aqui isto está fixe
+	//pthread_join(tid, NULL);						//idk se aqui isto está fixe,acho que não.
 }
 
 //Ticket Office Thread, auxiliary thread

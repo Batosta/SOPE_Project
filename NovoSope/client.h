@@ -2,8 +2,7 @@
 
 //Functions for the Request FIFO
 void openRequestFIFO();
-void sendRequest();
-void sendRequest();
+void sendRequest(int nrlug,char pref[]);
 
 
 //Functions for the Answer FIFO

@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	openRequestFIFO();
-	sendRequest();	
+	sendRequest(atoi(argv[2]),argv[3]);	
 }
 
 
@@ -37,11 +37,15 @@ void openRequestFIFO(){
 
 //Ainda nao envia a struct
 //Function that sends through the "requests" FIFO a struct Request to the server
-void sendRequest(){
+void sendRequest(int nrlug,char pref[]){
 
-    char str[5000];
-    sprintf(str, "%d %d %s\n", getpid(), 2, "11 12 13");
-    write(REQUEST_FD, str, strlen(str));
+    printf("%d %s\n",nrlug,pref);
+    struct Request req;
+    req.pid=(int)getpid();
+    req.num_wanted_seats=nrlug;
+    // nao sei como passar de string para array de int.
+    printf("%d %d\n", req.pid,req.num_wanted_seats);
+    write(REQUEST_FD, &req, sizeof(struct Request));
 } 
 
 
