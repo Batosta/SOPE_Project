@@ -2,9 +2,11 @@
 
 
 int REQUEST_FD;				//Request FIFO fd
-int ANSWER_FD;				//Answer FIFO fd a aswer tem haver com cada pid por isso não pode ser global
+int ANSWER_FD;				//Answer FIFO fd a answer tem haver com cada pid por isso não pode ser global
 FILE* FILE_POINTER;			//File Pointer for the request fifo
-struct Request * buffer;
+
+
+struct Request * buffer;		//Unitary buffer. It's a Request Struct
 
 int main(int argc, char *argv[]) {
 
@@ -13,6 +15,8 @@ int main(int argc, char *argv[]) {
    		printf("Usage: server <num_room_seats> <num_ticket_offices> <open_time>\n");
    		return -1;
 	}
+
+	//cleanMessages();
 
 	createRequestFIFO();
 	openRequestFIFO();
@@ -56,15 +60,21 @@ void closeRequestFIFO(){
 	unlink("requests");
 }
 
-//Ainda nao recebe a struct
+//Recebe struct. O array ainda vem com lixo
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
+
 	struct Request req;
 	read(REQUEST_FD, &req, sizeof(struct Request));
 	printf("%d %d\n", req.pid,req.num_wanted_seats);
+	for(int i = 0; i < MAX_CLI_SEATS; i++){
+
+		if(req.pref_seat_list[i] > MAX_ROOM_SEATS || req.pref_seat_list[i] <= 0)
+			break;
+		else
+			printf("%d; ", req.pref_seat_list[i]);
+	}	
 }
-
-
 
 
 
@@ -112,5 +122,3 @@ void * ticketOfficeThread(void *arg){
 	printf("New thread.\n");
 	return NULL;
 }
-
-
