@@ -13,4 +13,3 @@ void sendAnswer(const char* fifoName, const char* message);
 //Functions for the threads
 void createTicketOfficeThread(int id);
 void * ticketOfficeThread(void *arg);
-
