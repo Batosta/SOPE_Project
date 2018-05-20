@@ -21,22 +21,15 @@ int main(int argc, char *argv[]) {
 	struct Request req;
 	req.pid=(int)getpid();
 	req.num_wanted_seats = atoi(argv[2]);
-
-	const char s[2] = " ";
 	char *token;
-	
 	int i = 0;
-	token = strtok(argv[3], s);
-	
+	token = strtok(argv[3], " ");
+	int num[strlen(token)];
+	req.pref_seat_list=num;
 	while(token != NULL){
-		
-		if(atoi(token) > MAX_ROOM_SEATS || atoi(token) <= 0)
-			break;
-		else{
-			req.pref_seat_list[i] = atoi(token);
-			i++;
-			token = strtok(NULL,s);
-		}
+		req.pref_seat_list[i] = atoi(token);
+		i++;
+		token = strtok(NULL," ");
 	}
 
 	sendRequest(req);
@@ -63,10 +56,11 @@ void openRequestFIFO(){
 //void closeAnswerFIFO(const char* fifoName){ }
 
 
-//O array de ints tem os lugares certos + lixo. Como o array é com size = 99, se metermos ./client x x "11 12 1 2", o array vai ser {11, 12, 1, 2, lixo, lixo, lixo, ...}
+
 //Function that sends through the "requests" FIFO a struct Request to the server
 void sendRequest(struct Request r){
-
+    for(int i=0;i<3;i++)
+	printf("%d \n", r.pref_seat_list[i]);
     write(REQUEST_FD, &r, sizeof(struct Request));
 } 
 
