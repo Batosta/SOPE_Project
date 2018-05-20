@@ -67,7 +67,7 @@ SERVER
 
 para impedir que haja 2 bilheteiras ou mais a tentarem reservar o mesmo lugar ao mesmo tempo.
 
-Funções que as threads devem ter:
+Funções que as threads devem ter:(VER SE ESTA BEM)
   
 	int isSeatFree(Seat * seats,int seatNum)- testa se o lugar seatNum está livre.
 
