@@ -68,7 +68,6 @@ void closeRequestFIFO(){
 //Recebe struct. Esta parte nao esta a ler o array direito nao sei porque.
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
-
 	struct Request req;
 	read(REQUEST_FD, &req, sizeof(struct Request));
 	printf("%d %d\n", req.pid,req.num_wanted_seats);
@@ -125,7 +124,7 @@ void * ticketOfficeThread(void *arg){
 }
 
 //Tests if the seat is free
-int isSeatFree(Seat * seats,int seatNum) {
+int isSeatFree(int * seats,int seatNum) {
 	if(seats[seatNum]!=0)
 		return 0;
 	else
@@ -133,12 +132,12 @@ int isSeatFree(Seat * seats,int seatNum) {
 }
 
 //Booking the seatNum
-void bookSeat(Seat * seats, int seatNum, int clientId){
+void bookSeat(int * seats, int seatNum, int clientId){
 	seats[seatNum]=clientId;
 }
 
 //Releases the seatNum
-void freeSeat(Seat * seats, int seatNum){
+void freeSeat(int * seats, int seatNum){
 	seats[seatNum]=0;
 }
 

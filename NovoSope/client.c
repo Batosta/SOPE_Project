@@ -18,15 +18,14 @@ int main(int argc, char *argv[]) {
 	openRequestFIFO();
 
 //Creates the struct to send through the request FIFO
-	struct Request req
-	req->pid=(int)getpid();
-	req->num_wanted_seats = atoi(argv[2]);
+	struct Request req;
+	req.pid=(int)getpid();
+	req.num_wanted_seats = atoi(argv[2]);
 	char *token;
 	int i = 0;
 	token = strtok(argv[3], " ");
 	int num[strlen(token)];
 	req.pref_seat_list=num;
-	
 	while(token != NULL){
 		req.pref_seat_list[i] = atoi(token);
 		i++;
@@ -62,7 +61,7 @@ void openRequestFIFO(){
 void sendRequest(struct Request r){
     for(int i=0;i<3;i++)
 	printf("%d \n", r.pref_seat_list[i]);
-    write(REQUEST_FD, r, sizeof(struct Request));
+    write(REQUEST_FD, &r, sizeof(struct Request));
 } 
 
 

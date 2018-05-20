@@ -21,7 +21,7 @@
 struct Request {
     int pid;					//Client's PID
     int num_wanted_seats;			//Client's number of wanted seats
-    int * pref_seat_list;		//Client's array of preferred seats
+    int * pref_seat_list;			//Client's array of preferred seats
 };
 
 
