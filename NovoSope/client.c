@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
 		i++;
 		token = strtok(NULL," ");
 	}
+	req.num_pref_seats=i;
 
 	sendRequest(req);
 //Until here
@@ -59,8 +60,10 @@ void openRequestFIFO(){
 
 //Function that sends through the "requests" FIFO a struct Request to the server
 void sendRequest(struct Request r){
-    for(int i=0;i<3;i++)
-	printf("%d \n", r.pref_seat_list[i]);
+	printf("%d %d\n", r.pid,r.num_wanted_seats);
+	for(int i = 0;i<r.num_pref_seats ; i++){
+		printf("%d; ", r.pref_seat_list[i]);
+	}
     write(REQUEST_FD, &r, sizeof(struct Request));
 } 
 

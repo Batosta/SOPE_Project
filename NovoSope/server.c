@@ -65,7 +65,7 @@ void closeRequestFIFO(){
 	unlink("requests");
 }
 
-//Recebe struct. Esta parte nao esta a ler o array direito nao sei porque.
+//Recebe struct. O array ainda vem com lixo. qual array?
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
 	struct Request req;
