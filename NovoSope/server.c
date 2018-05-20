@@ -4,6 +4,7 @@
 int REQUEST_FD;				//Request FIFO fd
 int ANSWER_FD;				//Answer FIFO fd a answer tem haver com cada pid por isso não pode ser global
 FILE* FILE_POINTER;			//File Pointer for the request fifo
+int * Seats;
 
 
 struct Request * buffer;		//Unitary buffer. It's a Request Struct
@@ -16,6 +17,8 @@ int main(int argc, char *argv[]) {
    		return -1;
 	}
 
+	Seats=malloc(sizeof(int)*atoi(argv[1]));
+
 	//cleanMessages();
 
 	createRequestFIFO();
@@ -27,6 +30,8 @@ int main(int argc, char *argv[]) {
 		
 		createTicketOfficeThread(i);
 	}
+
+	free(Seats);
 }
 
 /*									REQUESTS										*/
@@ -60,19 +65,15 @@ void closeRequestFIFO(){
 	unlink("requests");
 }
 
-//Recebe struct. O array ainda vem com lixo
+//Recebe struct. Esta parte nao esta a ler o array direito nao sei porque.
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
 
 	struct Request req;
 	read(REQUEST_FD, &req, sizeof(struct Request));
 	printf("%d %d\n", req.pid,req.num_wanted_seats);
-	for(int i = 0; i < MAX_CLI_SEATS; i++){
-
-		if(req.pref_seat_list[i] > MAX_ROOM_SEATS || req.pref_seat_list[i] <= 0)
-			break;
-		else
-			printf("%d; ", req.pref_seat_list[i]);
+	for(int i = 0;i<1 ; i++){
+		printf("%d; ", req.pref_seat_list[i]);
 	}	
 }
 
@@ -122,3 +123,26 @@ void * ticketOfficeThread(void *arg){
 	printf("New thread.\n");
 	return NULL;
 }
+
+//Tests if the seat is free
+int isSeatFree(Seat * seats,int seatNum) {
+	if(seats[seatNum]!=0)
+		return 0;
+	else
+		return 1;
+}
+
+//Booking the seatNum
+void bookSeat(Seat * seats, int seatNum, int clientId){
+	seats[seatNum]=clientId;
+}
+
+//Releases the seatNum
+void freeSeat(Seat * seats, int seatNum){
+	seats[seatNum]=0;
+}
+
+
+
+
+

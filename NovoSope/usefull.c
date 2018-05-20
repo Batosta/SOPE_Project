@@ -5,7 +5,7 @@ void writeMessage(char *filename, char *message){
 
    FILE *file;
    file = fopen(filename, "a+");
-   fprintf(file, message);
+   fprintf(file, "%s\n",message);
 }
 
 //Function that creates (if not yet) 4 .txt files or just clears them if already created
