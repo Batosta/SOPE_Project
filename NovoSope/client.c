@@ -34,7 +34,6 @@ int main(int argc, char *argv[]) {
 	req.num_pref_seats=i;
 
 	sendRequest(req);
-	close(REQUEST_FD);
 	
 	//openAnswerFIFO();	//isto tem de estar comentado enquanto nao houver answer
 	//readAnswer();		//isto tem de estar comentado enquanto nao houver answer
@@ -61,6 +60,7 @@ void openRequestFIFO(){
 //Function that sends through the "requests" FIFO a struct Request to the server
 void sendRequest(struct Request r){
     write(REQUEST_FD, &r, sizeof(struct Request));
+    close(REQUEST_FD);
 } 
 
 
@@ -77,6 +77,7 @@ void createAnswerFIFO(){
 	}
 }
 
+//Opens the answerFIFO
 void openAnswerFIFO(){
 	printf("%s",answer_name);
 	if((ANSWER_FD = open(answer_name, O_RDONLY)) < 0){
@@ -86,6 +87,7 @@ void openAnswerFIFO(){
 	}
 }
 
+//Closes and destroys the answer FIFO
 void closeAnswerFIFO(){
 	close(ANSWER_FD);
 	unlink(answer_name);

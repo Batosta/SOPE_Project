@@ -4,6 +4,7 @@
 int REQUEST_FD;						//Request FIFO fd
 int ANSWER_FD;						//Answer FIFO fd a answer tem haver com cada pid por isso não pode ser global
 int * seats;						//Seats of the room
+int nr_seats;						//Number of seats
 pthread_mutex_t read_mut=PTHREAD_MUTEX_INITIALIZER;	//thread's mutex to read from buffer
 pthread_mutex_t * seats_mut;
 
@@ -18,8 +19,10 @@ int main(int argc, char *argv[]) {
    		return -1;
 	}
 
-	seats=malloc(sizeof(int)*atoi(argv[1]));
-	seats_mut=malloc(sizeof(pthread_mutex_t)*atoi(argv[1]));
+	nr_seats=atoi(argv[1]);
+
+	seats=malloc(sizeof(int)*nr_seats);
+	seats_mut=malloc(sizeof(pthread_mutex_t)*nr_seats);
 	
 
 	//cleanMessages();
@@ -116,7 +119,6 @@ void createTicketOfficeThread(int id){
 	
 	pthread_t tid;
 	pthread_create(&tid, NULL, ticketOfficeThread, NULL);			//2º NULL terá de ser alterado
-	//pthread_join(tid, NULL);						//idk se aqui isto está fixe,acho que não.
 }
 
 //Ticket Office Thread, auxiliary thread
@@ -132,7 +134,7 @@ void * ticketOfficeThread(void *arg){
 		buffer=NULL;
 		printf("%d\n",req.pid);
 		pthread_mutex_unlock(&read_mut);
-		//processRequest(req,seats);
+		processRequest(&req);
 	}else{
 		pthread_mutex_unlock(&read_mut);
 	}
@@ -140,21 +142,63 @@ void * ticketOfficeThread(void *arg){
 	return NULL;
 }
 
+//Process the request of the client
+void processRequest(struct Request * req) {
+	int err=testSomeCond(req);
+	struct Answer ans;
+	if(err<0){
+		ans.error=err;
+		//enviar resposta
+		//escrever no ficheiro
+		return;
+	}
+	int n_res=0;
+	//while(n_res<=req->num_wanted_seats)
+}
+
 //Tests if the seat is free
-int isSeatFree(int * seats,int seatNum) {
-	if(seats[seatNum]!=0)
+int isSeatFree(int seatNum) {
+	if(seats[seatNum-1]!=0)
 		return 0;
 	else
 		return 1;
 }
 
+//Tests some of the conditions
+int testSomeCond(struct Request * req){
+	if(req->num_wanted_seats>MAX_CLI_SEATS)
+		return -1;
+	if(req->num_pref_seats<req->num_wanted_seats)
+		return -2;
+	int invalid_nr=0;	//counter for invalid preferred seats
+	for(unsigned int i=0;i<req->num_pref_seats;i++){
+		if(req->pref_seat_list[i]<0 || req->pref_seat_list[i]>nr_seats){
+			invalid_nr++;
+		}
+	}
+	if((req->num_pref_seats-invalid_nr)>req->num_wanted_seats)
+		return -3;
+	if(req->num_pref_seats<=0)
+		return -4;
+	int n=0;
+	for(unsigned int i=0;i<nr_seats;i++){
+		if(seats[i]==0)
+			n++;
+	}
+	if(n==0)
+		return -6;
+	if(req->num_wanted_seats>n)
+		return -5;
+	return 0;
+}
+
 //Booking the seatNum
-void bookSeat(int * seats, int seatNum, int clientId){
+void bookSeat(int seatNum, int clientId){
 	seats[seatNum]=clientId;
 }
 
 //Releases the seatNum
-void freeSeat(int * seats, int seatNum){
+void freeSeat(int seatNum){
 	seats[seatNum]=0;
 }
 
