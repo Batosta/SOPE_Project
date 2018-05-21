@@ -1,0 +1,13 @@
+cc       = gcc
+CFLAGS   = -Wall -Wextra -g
+LDFLAGS  = -pthread
+DEPS     = server.c server.h usefull.c usefull.h
+OBJFILES = server.o usefull.o
+TARGET   = server
+ 
+all: $(TARGET)
+ 
+$(TARGET): $(OBJFILES) $(DEPS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES) $(LDFLAGS)
+clean:
+	rm -f $(OBJFILES) $(TARGET) *~
