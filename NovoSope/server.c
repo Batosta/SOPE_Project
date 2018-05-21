@@ -3,10 +3,9 @@
 
 int REQUEST_FD;						//Request FIFO fd
 int ANSWER_FD;						//Answer FIFO fd a answer tem haver com cada pid por isso não pode ser global
-int * seats;						//Seats of the room
+struct Seat * seats;					//Seats of the room
 int nr_seats;						//Number of seats
 pthread_mutex_t read_mut=PTHREAD_MUTEX_INITIALIZER;	//thread's mutex to read from buffer
-pthread_mutex_t * seats_mut;
 
 
 struct Request * buffer=NULL;		//Unitary buffer. It's a Request Struct
@@ -21,8 +20,7 @@ int main(int argc, char *argv[]) {
 
 	nr_seats=atoi(argv[1]);
 
-	seats=malloc(sizeof(int)*nr_seats);
-	seats_mut=malloc(sizeof(pthread_mutex_t)*nr_seats);
+	seats=malloc(sizeof(struct Seat)*nr_seats);
 	
 
 	//cleanMessages();
@@ -38,7 +36,7 @@ int main(int argc, char *argv[]) {
 	closeRequestFIFO();
 
 	free(seats);
-	free(seats_mut);
+	
 }
 
 /*									REQUESTS										*/
@@ -72,13 +70,12 @@ void closeRequestFIFO(){
 }
 
 void mainLoop(){
-	int n=1000;
+	int n=1;
 	while(n>0){
 		if(buffer==NULL){
-			printf("boas");
 			readRequest();
-			printf("%d\n",buffer->pid);
 		}
+	n--;
 	}
 }
 
@@ -86,8 +83,8 @@ void mainLoop(){
 //Function that receives and reads the request sent by a client through the "requests" FIFO
 void readRequest(){
 	struct Request req;
-	read(REQUEST_FD, &req, sizeof(struct Request));
-	buffer=&req;	
+	if(read(REQUEST_FD, &req, sizeof(struct Request))>0)
+		buffer=&req;	
 }
 
 
@@ -127,17 +124,17 @@ void * ticketOfficeThread(void *arg){
 	printf("New thread.\n");
 	struct Request req;
 	while (1) {                             
-	pthread_mutex_lock(&read_mut);      
-	if (buffer != NULL) {
+		pthread_mutex_lock(&read_mut);      
+		if (buffer != NULL) {
 	    
-		req=*buffer;
-		buffer=NULL;
-		printf("%d\n",req.pid);
-		pthread_mutex_unlock(&read_mut);
-		processRequest(&req);
-	}else{
-		pthread_mutex_unlock(&read_mut);
-	}
+			req=*buffer;
+			printf("ticket");
+			buffer=NULL;
+			printf("bug");
+			printf("%d\n",req.pid);
+			pthread_mutex_unlock(&read_mut);
+			processRequest(&req);
+		}else	pthread_mutex_unlock(&read_mut);
     }
 	return NULL;
 }
@@ -145,6 +142,7 @@ void * ticketOfficeThread(void *arg){
 //Process the request of the client
 void processRequest(struct Request * req) {
 	int err=testSomeCond(req);
+	return;
 	struct Answer ans;
 	if(err<0){
 		ans.error=err;
@@ -158,7 +156,7 @@ void processRequest(struct Request * req) {
 
 //Tests if the seat is free
 int isSeatFree(int seatNum) {
-	if(seats[seatNum-1]!=0)
+	if(seats[seatNum].pid!=0)
 		return 0;
 	else
 		return 1;
@@ -166,23 +164,29 @@ int isSeatFree(int seatNum) {
 
 //Tests some of the conditions
 int testSomeCond(struct Request * req){
-	if(req->num_wanted_seats>MAX_CLI_SEATS)
+	if(req->num_wanted_seats>MAX_CLI_SEATS){
+		printf("\n-1\n");
 		return -1;
-	if(req->num_pref_seats<req->num_wanted_seats)
+	}
+	if(req->num_pref_seats<req->num_wanted_seats){
+		printf("\n-2\n");
 		return -2;
+	}
 	int invalid_nr=0;	//counter for invalid preferred seats
 	for(unsigned int i=0;i<req->num_pref_seats;i++){
 		if(req->pref_seat_list[i]<=0 || req->pref_seat_list[i]>nr_seats){
 			invalid_nr++;
 		}
 	}
-	if((req->num_pref_seats-invalid_nr)>req->num_wanted_seats)
+	if((req->num_pref_seats-invalid_nr)<req->num_wanted_seats){
+		printf("\n-3\n");
 		return -3;
+	}
 	if(req->num_pref_seats<=0)
 		return -4;
 	int n=0;
 	for(unsigned int i=0;i<nr_seats;i++){
-		if(seats[i]==0)
+		if(isSeatFree(i))
 			n++;
 	}
 	if(n==0)
@@ -194,12 +198,12 @@ int testSomeCond(struct Request * req){
 
 //Booking the seatNum
 void bookSeat(int seatNum, int clientId){
-	seats[seatNum]=clientId;
+	seats[seatNum].pid=clientId;
 }
 
 //Releases the seatNum
 void freeSeat(int seatNum){
-	seats[seatNum]=0;
+	seats[seatNum].pid=0;
 }
 
 

@@ -25,6 +25,12 @@ struct Request {
 	int pref_seat_list[MAX_ROOM_SEATS];	//Client's array of preferred seats
 };
 
+//Struct wich symbolizes the seats of the room
+struct Seat {
+	int pid;						//pid of the client , 0 if it is free
+	pthread_mutex_t seat_mut;	//mutex to book the seat
+};
+
 //Struct which symbolizes the answer given to a client
 struct Answer {
 	int error;				//Number of the error, 0 in success	
