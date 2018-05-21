@@ -172,7 +172,7 @@ int testSomeCond(struct Request * req){
 		return -2;
 	int invalid_nr=0;	//counter for invalid preferred seats
 	for(unsigned int i=0;i<req->num_pref_seats;i++){
-		if(req->pref_seat_list[i]<0 || req->pref_seat_list[i]>nr_seats){
+		if(req->pref_seat_list[i]<=0 || req->pref_seat_list[i]>nr_seats){
 			invalid_nr++;
 		}
 	}
