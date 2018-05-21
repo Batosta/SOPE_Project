@@ -164,35 +164,35 @@ int isSeatFree(int seatNum) {
 
 //Tests some of the conditions
 int testSomeCond(struct Request * req){
-	if(req->num_wanted_seats>MAX_CLI_SEATS){
+	if(req->num_wanted_seats>MAX_CLI_SEATS){	//Caso em que excede o maximo por cliente
 		printf("\n-1\n");
 		return -1;
 	}
-	if(req->num_pref_seats<req->num_wanted_seats){
+	if(req->num_pref_seats<req->num_wanted_seats){	//Caso em que o numero de lugares preferidos é inferior aos wanted
 		printf("\n-2\n");
 		return -2;
 	}
 	int invalid_nr=0;	//counter for invalid preferred seats
-	for(unsigned int i=0;i<req->num_pref_seats;i++){
+	for(unsigned int i=0;i<req->num_pref_seats;i++){	//loop para calcular o numero de lugares preferidos invalidos
 		if(req->pref_seat_list[i]<=0 || req->pref_seat_list[i]>nr_seats){
 			invalid_nr++;
 		}
 	}
-	if((req->num_pref_seats-invalid_nr)<req->num_wanted_seats){
+	if((req->num_pref_seats-invalid_nr)<req->num_wanted_seats){	//caso os validos sejam inferiores aos wanted
 		printf("\n-3\n");
 		return -3;
 	}
-	if(req->num_pref_seats<=0)
+	if(req->num_pref_seats<=0)	//caso os prefered seham 0
 		return -4;
 	int n=0;
-	for(unsigned int i=0;i<nr_seats;i++){
+	for(unsigned int i=0;i<nr_seats;i++){	//loop para calcular nr de lugares livres
 		if(isSeatFree(i))
 			n++;
 	}
-	if(n==0)
+	if(n==0)	//caso esteja cheia a sala
 		return -6;
-	if(req->num_wanted_seats>n)
-		return -5;
+	if(req->num_wanted_seats>n)	//caso nao haja lugares suficientes para o numero querido, isto nao quer dizer
+		return -5;		//que os que ele quer estao livres
 	return 0;
 }
 
