@@ -6,5 +6,7 @@ void sendRequest(struct Request r);
 
 
 //Functions for the Answer FIFO
-void createOpenAnswerFIFO();
+void createAnswerFIFO();
+void openAnswerFIFO();
+void closeAnswerFIFO();
 void readAnswer();

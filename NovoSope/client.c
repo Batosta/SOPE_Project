@@ -3,7 +3,8 @@
 
 int REQUEST_FD;				//Request FIFO fd
 int ANSWER_FD;				//Answer FIFO fd
-FILE* FILE_POINTER;			//File Pointer for the answer fifos
+struct Answer ans;
+char answer_name[10];
 
 int main(int argc, char *argv[]) {
 
@@ -14,6 +15,7 @@ int main(int argc, char *argv[]) {
 	   	printf("Usage: client <time_out> <num_wanted_seats> <pref_seat_list>\n");
 	   	return -1;
 	}
+	createAnswerFIFO();
 	
 	openRequestFIFO();
 
@@ -24,8 +26,6 @@ int main(int argc, char *argv[]) {
 	char *token;
 	int i = 0;
 	token = strtok(argv[3], " ");
-	int num[strlen(token)];
-	req.pref_seat_list=num;
 	while(token != NULL){
 		req.pref_seat_list[i] = atoi(token);
 		i++;
@@ -34,10 +34,13 @@ int main(int argc, char *argv[]) {
 	req.num_pref_seats=i;
 
 	sendRequest(req);
-//Until here
-
-
-
+	close(REQUEST_FD);
+	
+	//openAnswerFIFO();	//isto tem de estar comentado enquanto nao houver answer
+	//readAnswer();		//isto tem de estar comentado enquanto nao houver answer
+	sleep(5);
+	closeAnswerFIFO();
+	
 }
 
 
@@ -54,53 +57,42 @@ void openRequestFIFO(){
 	}
 }
 
-//void closeAnswerFIFO(const char* fifoName){ }
-
-
 
 //Function that sends through the "requests" FIFO a struct Request to the server
 void sendRequest(struct Request r){
-	printf("%d %d\n", r.pid,r.num_wanted_seats);
-	for(int i = 0;i<r.num_pref_seats ; i++){
-		printf("%d; ", r.pref_seat_list[i]);
-	}
     write(REQUEST_FD, &r, sizeof(struct Request));
 } 
 
 
-
-
-
-
-
 /*									ANSWERS										*/
 
-//Function that creates and opens the client's FIFO which is supposed to received the answer to the requests sent by the clients
-void createOpenAnswerFIFO(){
+//Function that creates client's FIFO which is supposed to received the answer to the requests sent by the clients
+void createAnswerFIFO(){
+	sprintf(answer_name,"%s%ld", "ans", (long)getpid());
 
-	//pid_t clientPID = getpid();
-	char str[10];
-	sprintf(str,"%s%ld", "ans", (long)getpid());
-
-	if((mkfifo(str, 0660)) != 0){
+	if((mkfifo(answer_name, 0660)) != 0){
 	
 		printf("Error while creating the client's answer FIFO.\n");
 		exit(1);
 	}
+}
 
-	if((ANSWER_FD = open(str, O_RDONLY)) < 0){
+void openAnswerFIFO(){
+	printf("%s",answer_name);
+	if((ANSWER_FD = open(answer_name, O_RDONLY)) < 0){
 
 		printf("Error while opening the client's answer FIFO (client side).\n");
 		exit(1);
 	}
-
-	FILE_POINTER = fdopen(ANSWER_FD, "r");
 }
+
+void closeAnswerFIFO(){
+	close(ANSWER_FD);
+	unlink(answer_name);
+}
+	
 
 //Function that receives through the answer fifo the answer of the server for the client requests
 void readAnswer(){
-	
-	char in[200];
-	read(ANSWER_FD, in, 200);
-	printf("%s\n", in);
+	read(ANSWER_FD, &ans, sizeof(ans));
 }

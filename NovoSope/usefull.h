@@ -19,9 +19,17 @@
 
 //Struct which symbolizes the request done by a client
 struct Request {
-    int pid;					//Client's PID
-    int num_wanted_seats;			//Client's number of wanted seats
-    int * pref_seat_list;			//Client's array of preferred seats
+	int pid;				//Client's PID
+	int num_wanted_seats;			//Client's number of wanted seats
+	int num_pref_seats;			//Client's number of preferred seats
+	int pref_seat_list[MAX_ROOM_SEATS];	//Client's array of preferred seats
+};
+
+//Struct which symbolizes the answer given to a client
+struct Answer {
+	int error;				//Number of the error, 0 in success	
+	int num_reserved;			//Number of seats reserved, to know the number on the res_list
+	int res_list[MAX_CLI_SEATS];		//Array with the seats reserved
 };
 
 
