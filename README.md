@@ -39,13 +39,13 @@ SERVER
 
 3-Cria o numero de threads por bilheteira.															(DONE)
 
-4-O programa principal lê dos requests.(falta guardar no buffer)
+4-O programa principal lê dos requests.(DONE)
 
-5-Apenas lê quando o buffer está vazio.
+5-Apenas lê quando o buffer está vazio.(DONE)
 
-6-As bilheteiras apanham o buffer.
+6-As bilheteiras apanham o buffer.(DONE)
 
-7-Mutex para ler do buffer para só estar uma de cada vez a do mesmo.
+7-Mutex para ler do buffer para só estar uma de cada vez a do mesmo.(DONE)
 
 8-Reserva dos lugares.
 
