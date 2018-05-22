@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <string.h>
+#include <signal.h>
 
 
 #define MAX_ROOM_SEATS 9999             /* maximum number of room seats/tickets available       */
@@ -40,5 +41,6 @@ struct Answer {
 
 
 //Functions that will take care of the writing on the .txt files
-void writeMessage(char *filename, char *message);
+void writeMessage(FILE *file, char *message);
 void cleanMessages();
+char * errorToChar(int error);
