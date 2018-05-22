@@ -12,7 +12,7 @@ void openAnswerFIFO(const char* fifoName);
 void sendAnswer(const char* fifoName, struct Answer ans);
 
 //Functions for the threads
-void createTicketOfficeThread(int id);
+void createTicketOfficeThread(int ticketOfficesNumber);
 void * ticketOfficeThread(void *arg);
 void readBuffer(struct Request * req);
 void processRequest(struct Request * req);
