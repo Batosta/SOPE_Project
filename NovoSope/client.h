@@ -10,3 +10,8 @@ void createAnswerFIFO();
 void openAnswerFIFO();
 void closeAnswerFIFO();
 void readAnswer();
+void handleAnswer();
+
+//Functions to write in files
+void writeLog();
+void writeBook();
