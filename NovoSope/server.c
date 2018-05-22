@@ -6,10 +6,20 @@ struct Seat * seats;					//Array of seats of the room
 int nr_seats;						//Number of seats
 pthread_mutex_t read_mut = PTHREAD_MUTEX_INITIALIZER;	//thread's mutex to read from buffer
 
+FILE * slog;
+int num_ticket_offices;
+pthread_t * t_tid;
+int alrm;
 
 struct Request * buffer=NULL;				//Unitary buffer. It's a Request Struct
 
+void handle_alarm(int sig) {
+	alrm=1;
+}
+
 int main(int argc, char *argv[]) {
+	alrm=0;
+	signal(SIGALRM, handle_alarm);
 
 	if (argc != 4){
 
@@ -17,9 +27,13 @@ int main(int argc, char *argv[]) {
    		return -1;
 	}
 
+	alarm(atoi(argv[3]));
+	num_ticket_offices = atoi(argv[2]);
+
 	nr_seats=atoi(argv[1]);
 
 	seats=malloc(sizeof(struct Seat)*nr_seats);
+	t_tid=malloc(sizeof(pthread_t)*num_ticket_offices);
 
 	cleanMessages();
 
@@ -29,7 +43,17 @@ int main(int argc, char *argv[]) {
 	openRequestFIFO();
 	mainLoop();
 	closeRequestFIFO();
-
+	
+	for(int i=0;i<num_ticket_offices;i++){
+		char message[9];
+		pthread_join(t_tid[i],NULL);
+		sprintf(message,"%0*d-CLOSE",2,(i+1));
+		writeMessage(slog,message);
+	}
+	char message_s[]="SERVER CLOSED";
+	writeMessage(slog,message_s);
+	//close slog
+	free(t_tid);
 	free(seats);
 }
 
@@ -64,12 +88,12 @@ void closeRequestFIFO(){
 }
 
 void mainLoop(){
-	int n=10000;
-	while(1){
+
+	while(!alrm){
 		if(buffer==NULL){
 			readRequest();
 		}
-	n--;
+	sleep(1);
 	}
 }
 
@@ -87,7 +111,7 @@ void readRequest(){
 /*									ANSWERS										*/
 
 //Function that opens the FIFO fifoName which is supposed to transmit the answers sent by the server to the clients
-void openAnswerFIFO(int pid, struct Answer ans){
+void openAnswerFIFO(int pid, struct Answer * ans){
 
 	char answer_name[10];
 	sprintf(answer_name, "%s%ld", "ans", (long)pid);
@@ -96,31 +120,49 @@ void openAnswerFIFO(int pid, struct Answer ans){
 
 	if((ANSWER_FD = open(answer_name, O_WRONLY)) < 0){
 
-		printf("Error while opening the answer FIFO (server side).\n");
-		exit(1);
+		printf("Error while opening the answer FIFO %s (server side).\n", answer_name);
+       		return;
 	}
 
 	sendAnswer(ANSWER_FD, ans);
+	close(ANSWER_FD);
 }
 
 //Function that sends through the answer FIFO the answer of the server to the client that requested seats
-void sendAnswer(int ANSWER_FD, struct Answer ans){
+void sendAnswer(int ANSWER_FD, struct Answer * ans){
 
-	write(ANSWER_FD, &ans, sizeof(struct Answer));
+	write(ANSWER_FD, ans, sizeof(struct Answer));
 }
 
 /*									THREADS										*/
 
 //Function that creates a ticket office, which means it will create a new auxiliary thread that will process the requests
 void createTicketOfficeThread(int ticketOfficesNumber){				//id vai ser usado para escrever ID-OPEN ou ID-CLOSE
+	int thrarg[ticketOfficesNumber];
 
+	openLog();
 	for(int i = 0; i < ticketOfficesNumber; i++){
-
+		
+		char message[6];
 		printf("Created Ticket Office Thread.\n");
-
+		thrarg[i] = i + 1;
+		sprintf(message,"%0*d-OPEN",2,thrarg[i]);
+		writeMessage(slog,message);
 		pthread_t tid;
-		pthread_create(&tid, NULL, ticketOfficeThread, (i+1));			//2º NULL terá de ser alterado
+		pthread_create(&tid, NULL, ticketOfficeThread, &thrarg[i]);
+		t_tid[i]=tid;
+		sleep(1);
+	}
+}
 
+//Functions 
+void openLog(){
+
+	slog = fopen("slog.txt", "a");
+	if(slog == NULL){
+		
+		printf("Error Opening the slog.txt file (Server side)");
+		return;
 	}
 }
 
@@ -128,32 +170,43 @@ void createTicketOfficeThread(int ticketOfficesNumber){				//id vai ser usado pa
 void * ticketOfficeThread(void *arg){
 
 	printf("New thread.\n");
+	int id = *(int *)arg;	
+	printf("id = %d", id);
 	struct Request req;
-	while (1) {                             
+	while (!alrm) {                             
 		pthread_mutex_lock(&read_mut);
 		if (buffer != NULL) {
-	    
 			req=*buffer;
 			buffer=NULL;
 			pthread_mutex_unlock(&read_mut);
-			processRequest(&req);
-		}else	pthread_mutex_unlock(&read_mut);
-    }
+			processRequest(&req, id);
+		}else	
+			pthread_mutex_unlock(&read_mut);
+   	}
 	return NULL;
 }
 
 
 //Process the request of the client
-void processRequest(struct Request * req) {
+void processRequest(struct Request * req, int id) {
 
-	int err = testSomeCond(req);
+	printf("Procces nr %d with %d places and %d prefered\n",req->pid,req->num_wanted_seats,req->num_pref_seats);
 
-	struct Answer ans;
-	if(err != 0){					//If error
+	struct Answer * ans = malloc(sizeof(struct Answer));
+	ans->error = testSomeCond(req);
+	ans->req.pid = req->pid;
+	ans->req.num_wanted_seats = req->num_wanted_seats;
+	ans->req.num_pref_seats = req->num_pref_seats;
+	ans->id = id;
+	for(int k = 0; k < MAX_ROOM_SEATS; k++){
+		ans->req.pref_seat_list[k] = req->pref_seat_list[k];
+	}
+	
 
-		ans.error = err;
-		//enviar resposta
-		//escrever no ficheiro
+	if(ans->error != 0){					//If error
+
+		openAnswerFIFO(req->pid, ans);
+		handleAnswer(ans);
 		return;
 	} else{
 		
@@ -161,46 +214,41 @@ void processRequest(struct Request * req) {
 		int n_tried = 0;
 		while(n_tried < req->num_pref_seats && n_reserved < req->num_wanted_seats){
 
+			pthread_mutex_lock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
 			if(isSeatFree(seats, req->pref_seat_list[n_tried] - 1)){				//Checkar o bookSeats
 				
-				pthread_mutex_lock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
 				bookSeat(seats, req->pref_seat_list[n_tried] - 1, req->pid);
 				DELAY();
-				ans.res_list[n_reserved] = req->pref_seat_list[n_tried];
-				ans.num_reserved++;
+				ans->res_list[n_reserved] = req->pref_seat_list[n_tried];
 				n_reserved++;
-				pthread_mutex_unlock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
 			}
+
+			pthread_mutex_unlock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
 			n_tried++;
-
 		}
+
+		ans->num_reserved = n_reserved;
 		
-		if(n_reserved != req->num_wanted_seats){		//Ainda nao testado
+		if(ans->num_reserved < req->num_wanted_seats){		//Ainda nao testado
 
-			ans.error = -5;
+			ans->error = -5;
 			
-			for(int k = 0; k < nr_seats; k++){
+			for(int k = 0; k < ans->num_reserved; k++){
 
-				if(seats[k].pid == req->pid){
-
-					freeSeat(seats, k);
-				}
+				freeSeat(seats, ans->res_list[k] - 1);
 			}
-		}
+		}	
 	}
 
-	//sendAnswer
-	//sendAnswer("fifoname", );
-	//escrever nos files
-
 	openAnswerFIFO(req->pid, ans);
-	handleAnswer(&ans);
+	handleAnswer(ans);
+	free(ans);
 }
 
 
 //Tests some of the conditions
 int testSomeCond(struct Request * req){
-	printf("\n%d %d\n",req->num_pref_seats,req->num_wanted_seats);
+
 	if(req->num_wanted_seats>MAX_CLI_SEATS){	//Caso em que excede o maximo por cliente
 		return -1;
 	}
@@ -252,18 +300,88 @@ void freeSeat(struct Seat *seats, int seatNum){
 }
 
 
+//Function that handles the answer recieved
 void handleAnswer(struct Answer * ans) {
 	
 	if(ans->error == 0)
 		writeBook();
-	writeLog();
+	writeLog(ans);
 }
 
+//Function that writes in the slog.txt
+void writeLog(struct Answer * ans){
+
+	//Case of success
+	if(ans->error == 0){
+		
+		char mainMessage[WIDTH_PID + 8 + MAX_CLI_SEATS*(WIDTH_SEAT+1) + 2 + ans->num_reserved*(WIDTH_SEAT+1)];
+		char message1[WIDTH_PID + 8];
+		char message2[WIDTH_SEAT+1];
+		char message3[2];
+		char message4[WIDTH_SEAT+1];
+
+
+		sprintf(message1, "%0*d-%0*d-%0*d: ", 2, ans->id, WIDTH_PID, ans->req.pid, 2, ans->req.num_wanted_seats);
+		strcat(mainMessage, message1);
+		for(int k = 0; k < ans->req.num_pref_seats; k++){
+
+			sprintf(message2, "%0*d ", WIDTH_SEAT, ans->req.pref_seat_list[k]);
+			strcat(mainMessage, message2);
+		}
+		sprintf(message3, "- ");
+		strcat(mainMessage, message3);
+		for(int k = 0; k < ans->num_reserved; k++){
+			
+			
+			sprintf(message4, "%0*d ", WIDTH_SEAT, ans->res_list[k]);
+			strcat(mainMessage, message4);
+		}
+
+		writeMessage(slog, mainMessage);
+	} else {										//Case of error
+
+		char mainMessage[WIDTH_PID + 8 + MAX_CLI_SEATS*(WIDTH_SEAT+1) + 2 + ans->num_reserved*(WIDTH_SEAT+1)];
+		char message1[WIDTH_PID + 8];
+		char message2[MAX_CLI_SEATS*(WIDTH_SEAT+1)];
+		char message3[2];
+		char message4[3];
+
+		sprintf(message1, "00-%0*d-%0*d: ", WIDTH_PID, ans->req.pid, 2, ans->req.num_wanted_seats);
+		strcat(mainMessage, message1);
+		for(int k = 0; k < ans->req.num_pref_seats; k++){
+
+			sprintf(message2, "%0*d ", WIDTH_SEAT, ans->req.pref_seat_list[k]);
+			strcat(mainMessage, message2);
+		}
+		sprintf(message3, "- ");
+		strcat(mainMessage, message3);
+
+		char * error = errorToChar(ans->error);
+		sprintf(message4, "%s", error);
+		strcat(mainMessage, message4);
+
+		writeMessage(slog, mainMessage);
+	}
+}
+
+//Function that writes in sbook.txt
 void writeBook(){
-
-}
-
-void writeLog(){
-
 	
+	FILE * book=fopen("sbook.txt","a");
+	if(book == NULL){
+		printf("Error Opening the sbook.txt file (Server side)");
+		return;
+	}
+
+	for(int i = 0; i < nr_seats; i++){
+		
+		if(seats[i].pid != 0){
+			
+			sleep(0);
+			char message[WIDTH_SEAT];
+			sprintf(message,"%0*d",WIDTH_SEAT, i+1);
+			writeMessage(book, message);
+		}
+	}
+	fclose(book);
 }
