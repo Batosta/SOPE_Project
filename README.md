@@ -9,11 +9,11 @@ CLIENT
 
 3-Envia ao servidor através do requests um pedido, pode ser através de uma struct.										(DONE)
 
-4-Aguarda a resposta.
+4-Aguarda a resposta.(DONE)
 
-5-Implementar o TIME_OUT.
+5-Implementar o TIME_OUT.(DONE ACHO)
 
-6-Escrever no clog.txt.
+6-Escrever no clog.txt.(DONE)
 
 Bem sucedido(PID XX.NN IDENTIFICADOR)
 
@@ -21,7 +21,7 @@ Mal sucedido(PID ERRO)
 
 	XX.NN - 01.03 ou seja lugar um de tres reservados.
 
-7-Escrever no cbook.txt com WITH_SEAT (IDENTIFICADOR) isto é cada cliente neste apenas escreve cada lugar reservado por cada linha.
+7-Escrever no cbook.txt com WITH_SEAT (IDENTIFICADOR) isto é cada cliente neste apenas escreve cada lugar reservado por cada linha.(DONE)
 
 Não é preciso PID neste.
 
@@ -47,9 +47,9 @@ SERVER
 
 7-Mutex para ler do buffer para só estar uma de cada vez a do mesmo.(DONE)
 
-8-Reserva dos lugares.
+8-Reserva dos lugares.(DONE)
 
-9-Casos de erro:
+9-Casos de erro:(DONE)
 
 -1 a quantidade de lugares pretendidos é superior ao máximo permitido (MAX_CLI_SEATS).
 
@@ -65,7 +65,7 @@ SERVER
 
 10-Array de mutex's uma para cada lugar ,
 
-para impedir que haja 2 bilheteiras ou mais a tentarem reservar o mesmo lugar ao mesmo tempo.
+para impedir que haja 2 bilheteiras ou mais a tentarem reservar o mesmo lugar ao mesmo tempo.(DONE)
 
 Funções que as threads devem ter:(VER SE ESTA BEM)
   
