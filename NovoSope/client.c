@@ -9,8 +9,8 @@ char answer_name[10];
 void handle_alarm(int sig) {
 	ans.error=-7;
 	handleAnswer();
-	exit(0);
 	closeAnswerFIFO();
+	exit(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	
 	openRequestFIFO();
 
-//Creates the struct to send through the request FIFO
+	//Creates the struct to send through the request FIFO
 	struct Request req;
 	req.pid=(int)getpid();
 	req.num_wanted_seats = atoi(argv[2]);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 //Function that opens the clients's FIFO which is supposed to send the requests sent by the clients to the server
 void openRequestFIFO(){
 
-	if((REQUEST_FD = open("requests", O_WRONLY|O_APPEND)) < 0){
+	if((REQUEST_FD = open("requests", O_WRONLY)) < 0){
 
 		printf("Error while opening the request FIFO (client side).\n");
 		exit(1);
@@ -144,7 +144,7 @@ void writeLog(){
 
 //Function that writes in cbook.txt
 void writeBook(){
-	FILE * book=fopen("cbook.txt","a");
+	FILE * book = fopen("cbook.txt","a");
 	if(book==NULL){
 		printf("Error Opening the cbook.txt file (Client side)");
 		return;
