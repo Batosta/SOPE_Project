@@ -3,12 +3,12 @@
 
 int REQUEST_FD;						//Request FIFO fd
 int ANSWER_FD;						//Answer FIFO fd a answer tem haver com cada pid por isso não pode ser global
-struct Seat * seats;					//Seats of the room
+struct Seat * seats;					//Array of seats of the room
 int nr_seats;						//Number of seats
-pthread_mutex_t read_mut=PTHREAD_MUTEX_INITIALIZER;	//thread's mutex to read from buffer
+pthread_mutex_t read_mut = PTHREAD_MUTEX_INITIALIZER;	//thread's mutex to read from buffer
 
 
-struct Request * buffer=NULL;		//Unitary buffer. It's a Request Struct
+struct Request * buffer=NULL;				//Unitary buffer. It's a Request Struct
 
 int main(int argc, char *argv[]) {
 
@@ -26,17 +26,13 @@ int main(int argc, char *argv[]) {
 	//cleanMessages();
 
 	createRequestFIFO();
-	for(unsigned int i = 1; i <= atoi(argv[2]); i++){
-		
-		createTicketOfficeThread(i);
-	}
+	createTicketOfficeThread(atoi(argv[2]));
 
 	openRequestFIFO();
 	mainLoop();
 	closeRequestFIFO();
 
 	free(seats);
-	
 }
 
 /*									REQUESTS										*/
@@ -70,8 +66,8 @@ void closeRequestFIFO(){
 }
 
 void mainLoop(){
-	int n=1;
-	while(n>0){
+	int n=10000;
+	while(1){
 		if(buffer==NULL){
 			readRequest();
 		}
@@ -110,12 +106,16 @@ void sendAnswer(const char* fifoName, struct Answer ans){
 /*									THREADS										*/
 
 //Function that creates a ticket office, which means it will create a new auxiliary thread that will process the requests
-void createTicketOfficeThread(int id){
+void createTicketOfficeThread(int ticketOfficesNumber){				//id vai ser usado para escrever ID-OPEN ou ID-CLOSE
 
-	printf("Created Ticket Office Thread.\n");
-	
-	pthread_t tid;
-	pthread_create(&tid, NULL, ticketOfficeThread, NULL);			//2º NULL terá de ser alterado
+	for(int i = 0; i < ticketOfficesNumber; i++){
+
+		printf("Created Ticket Office Thread.\n");
+
+		pthread_t tid;
+		pthread_create(&tid, NULL, ticketOfficeThread, i+1);			//2º NULL terá de ser alterado
+
+	}
 }
 
 //Ticket Office Thread, auxiliary thread
@@ -124,14 +124,14 @@ void * ticketOfficeThread(void *arg){
 	printf("New thread.\n");
 	struct Request req;
 	while (1) {                             
-		pthread_mutex_lock(&read_mut);      
+		pthread_mutex_lock(&read_mut);
 		if (buffer != NULL) {
 	    
 			req=*buffer;
-			printf("ticket");
+			printf("ticket\n");
 			buffer=NULL;
-			printf("bug");
-			printf("%d\n",req.pid);
+			printf("id: %d\n", (int)arg);
+			//printf("%d\n",req.pid);
 			pthread_mutex_unlock(&read_mut);
 			processRequest(&req);
 		}else	pthread_mutex_unlock(&read_mut);
@@ -139,28 +139,55 @@ void * ticketOfficeThread(void *arg){
 	return NULL;
 }
 
+
 //Process the request of the client
 void processRequest(struct Request * req) {
-	int err=testSomeCond(req);
-	return;
+
+	int err = testSomeCond(req);
+
 	struct Answer ans;
-	if(err<0){
-		ans.error=err;
+	if(err != 0){					//If error
+
+		ans.error = err;
 		//enviar resposta
 		//escrever no ficheiro
 		return;
+	} else{
+		
+		int n_reserved = 0;
+		int n_tried = 0;
+		while(n_tried < req->num_pref_seats && n_reserved < req->num_wanted_seats){
+
+			if(isSeatFree(req->pref_seat_list[n_tried] - 1)){
+				
+				pthread_mutex_lock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
+				bookSeat(req->pref_seat_list[n_tried] - 1, req->pid);
+				ans.res_list[n_reserved] = req->pref_seat_list[n_tried];
+				n_reserved++;
+				pthread_mutex_unlock(&seats[req->pref_seat_list[n_tried] - 1].seat_mut);
+			}
+			n_tried++;
+
+		}
+		
+		if(n_reserved != req->num_wanted_seats){		//Ainda nao testado
+
+			ans.error = -5;
+			
+			for(int k = 0; k < nr_seats; k++){
+
+				if(seats[k].pid == req->pid){
+
+					freeSeat(k);
+				}
+			}
+		}
 	}
-	int n_res=0;
-	//while(n_res<=req->num_wanted_seats)
+
+	//sendAnswer
+	//escrever nos files
 }
 
-//Tests if the seat is free
-int isSeatFree(int seatNum) {
-	if(seats[seatNum].pid!=0)
-		return 0;
-	else
-		return 1;
-}
 
 //Tests some of the conditions
 int testSomeCond(struct Request * req){
@@ -172,41 +199,48 @@ int testSomeCond(struct Request * req){
 		printf("\n-2\n");
 		return -2;
 	}
-	int invalid_nr=0;	//counter for invalid preferred seats
-	for(unsigned int i=0;i<req->num_pref_seats;i++){	//loop para calcular o numero de lugares preferidos invalidos
+	for(int i=0;i<req->num_pref_seats;i++){	//loop para calcular o numero de lugares preferidos invalidos
 		if(req->pref_seat_list[i]<=0 || req->pref_seat_list[i]>nr_seats){
-			invalid_nr++;
+			return -3;
 		}
 	}
-	if((req->num_pref_seats-invalid_nr)<req->num_wanted_seats){	//caso os validos sejam inferiores aos wanted
-		printf("\n-3\n");
-		return -3;
-	}
-	if(req->num_pref_seats<=0)	//caso os prefered seham 0
+	if(req->num_pref_seats<=0){	//caso os prefered sejam 0
+		printf("\n-4\n"); 		
 		return -4;
+	}
 	int n=0;
-	for(unsigned int i=0;i<nr_seats;i++){	//loop para calcular nr de lugares livres
+	for(int i=0;i<nr_seats;i++){	//loop para calcular nr de lugares livres
 		if(isSeatFree(i))
 			n++;
 	}
-	if(n==0)	//caso esteja cheia a sala
+	if(n==0){	//caso esteja cheia a sala
+		printf("\n-6\n"); 
 		return -6;
-	if(req->num_wanted_seats>n)	//caso nao haja lugares suficientes para o numero querido, isto nao quer dizer
+	}
+	if(req->num_wanted_seats>n){	//caso nao haja lugares suficientes para o numero querido, isto nao quer dizer
+		printf("\n-5\n"); 
 		return -5;		//que os que ele quer estao livres
+	}
 	return 0;
+}
+
+//Tests if the seat is free
+int isSeatFree(int seatNum) {
+
+	if(seats[seatNum].pid != 0)		//Not free seat
+		return 0;
+	else					//Free seat
+		return 1;
 }
 
 //Booking the seatNum
 void bookSeat(int seatNum, int clientId){
-	seats[seatNum].pid=clientId;
+
+	seats[seatNum].pid = clientId;
 }
 
 //Releases the seatNum
 void freeSeat(int seatNum){
-	seats[seatNum].pid=0;
+
+	seats[seatNum].pid = 0;
 }
-
-
-
-
-
