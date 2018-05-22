@@ -10,12 +10,13 @@
 #include <string.h>
 #include <signal.h>
 
+#define MAX_ROOM_SEATS 9999             /* maximum number of room seats/tickets available       	*/
+#define MAX_CLI_SEATS 99                /* maximum number of seats/tickets per request          	*/
+#define WIDTH_PID 5                     /* length of the PID string                             	*/
+#define WIDTH_XXNN 5                    /* length of the XX.NN string (reservation X out of N) 		*/
+#define WIDTH_SEAT 4                    /* length of the seat number id string                  	*/
 
-#define MAX_ROOM_SEATS 9999             /* maximum number of room seats/tickets available       */
-#define MAX_CLI_SEATS 99                /* maximum number of seats/tickets per request          */
-#define WIDTH_PID 5                     /* length of the PID string                             */
-#define WIDTH_XXNN 5                    /* length of the XX.NN string (reservation X out of N)  */
-#define WIDTH_SEAT 4                    /* length of the seat number id string                  */
+#define DELAY()  usleep(1000*1000); 	/* used to simulate the delay on executing some operations	*/
 
 
 //Struct which symbolizes the request done by a client
